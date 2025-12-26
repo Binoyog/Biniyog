@@ -1,36 +1,80 @@
 <!DOCTYPE html>
-<html lang="bn">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Biniyog Login</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Biniyog | Login</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .box {
+      background: #fff;
+      padding: 25px;
+      width: 100%;
+      max-width: 360px;
+      text-align: center;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    h2 {
+      margin-bottom: 10px;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      font-size: 16px;
+    }
+    button {
+      width: 48%;
+      padding: 10px;
+      margin-top: 10px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .msg {
+      margin-top: 12px;
+      font-size: 14px;
+      color: red;
+    }
+  </style>
 </head>
-<body style="text-align:center; font-family:Arial">
 
-  <h1>Biniyog Website Live ✅</h1>
-  <h2>Login / Sign Up</h2>
+<body>
 
-  <input type="email" id="email" placeholder="Email"><br><br>
-  <input type="password" id="password" placeholder="Password"><br><br>
+  <div class="box">
+    <h2>Biniyog Website ✅</h2>
+    <p>Login / Sign Up</p>
 
-  <button onclick="login()">Login</button>
-  <button onclick="signup()">Sign Up</button>
+    <input type="email" id="email" placeholder="Email" />
+    <input type="password" id="password" placeholder="Password (min 6)" />
 
-  <p id="msg" style="color:red;"></p>
+    <div>
+      <button onclick="login()">Login</button>
+      <button onclick="signup()">Sign Up</button>
+    </div>
 
+    <div id="msg" class="msg"></div>
+  </div>
+
+  <!-- Firebase -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import {
-      getAuth,
-      signInWithEmailAndPassword,
-      createUserWithEmailAndPassword
-    } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } 
+    from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCTIkplt-eH84ZEQXllDeP7rXUBGQeAdBU",
       authDomain: "biniyog-web-b6273.firebaseapp.com",
       projectId: "biniyog-web-b6273",
-      storageBucket: "biniyog-web-b6273.appspot.com",
+      storageBucket: "biniyog-web-b6273.firebasestorage.app",
       messagingSenderId: "896287012716",
       appId: "1:896287012716:web:2ddd7892a97cb453516549"
     };
@@ -38,42 +82,48 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
 
-    function getValues() {
+    window.login = function () {
       const email = document.getElementById("email").value.trim();
       const password = document.getElementById("password").value.trim();
 
       if (!email || !password) {
-        document.getElementById("msg").innerText = "❌ Email ও Password দিন";
-        return null;
+        document.getElementById("msg").innerText = "⚠️ Email ও Password দিন";
+        return;
       }
-      return { email, password };
-    }
 
-    window.signup = function () {
-      const data = getValues();
-      if (!data) return;
-
-      createUserWithEmailAndPassword(auth, data.email, data.password)
+      signInWithEmailAndPassword(auth, email, password)
         .then(() => {
           document.getElementById("msg").style.color = "green";
-          document.getElementById("msg").innerText = "Signup Success 🎉 এখন Login করুন";
+          document.getElementById("msg").innerText = "✅ Login Successful";
         })
-        .catch(err => {
-          document.getElementById("msg").innerText = err.message;
+        .catch(error => {
+          document.getElementById("msg").style.color = "red";
+          document.getElementById("msg").innerText = error.message;
         });
     };
 
-    window.login = function () {
-      const data = getValues();
-      if (!data) return;
+    window.signup = function () {
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value.trim();
 
-      signInWithEmailAndPassword(auth, data.email, data.password)
+      if (!email || !password) {
+        document.getElementById("msg").innerText = "⚠️ Email ও Password দিন";
+        return;
+      }
+
+      if (password.length < 6) {
+        document.getElementById("msg").innerText = "⚠️ Password কমপক্ষে ৬ অক্ষরের হতে হবে";
+        return;
+      }
+
+      createUserWithEmailAndPassword(auth, email, password)
         .then(() => {
           document.getElementById("msg").style.color = "green";
-          document.getElementById("msg").innerText = "Login Success ✅";
+          document.getElementById("msg").innerText = "🎉 Signup Successful";
         })
-        .catch(err => {
-          document.getElementById("msg").innerText = err.message;
+        .catch(error => {
+          document.getElementById("msg").style.color = "red";
+          document.getElementById("msg").innerText = error.message;
         });
     };
   </script>
