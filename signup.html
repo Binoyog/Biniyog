@@ -11,20 +11,20 @@
       margin:0;
       height:100vh;
       display:flex;
-      justify-content:center;
       align-items:center;
-      background:linear-gradient(135deg,#1d4350,#a43931);
+      justify-content:center;
+      background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
     }
-    .box{
+    .card{
       background:#fff;
-      max-width:400px;
       width:100%;
+      max-width:400px;
       padding:25px;
       border-radius:12px;
       box-shadow:0 10px 25px rgba(0,0,0,.25);
     }
-    h2{text-align:center;color:#1d4350}
-    label{display:block;margin-top:15px;font-size:14px}
+    h2{text-align:center;color:#203a43}
+    label{margin-top:15px;display:block;font-size:14px}
     input{
       width:100%;
       padding:12px;
@@ -34,37 +34,37 @@
     }
     button{
       width:100%;
-      margin-top:20px;
+      margin-top:22px;
       padding:12px;
-      background:#1d4350;
+      background:#203a43;
       color:#fff;
       border:none;
       border-radius:8px;
       font-size:16px;
       cursor:pointer;
     }
-    button:hover{background:#16343e}
+    button:hover{background:#162c33}
     .links{text-align:center;margin-top:15px;font-size:14px}
-    a{color:#1d4350;text-decoration:none}
+    a{color:#203a43;text-decoration:none}
   </style>
 </head>
 <body>
 
-<div class="box">
+<div class="card">
   <h2>Biniyog Signup</h2>
 
-  <form>
+  <form onsubmit="signup(event)">
     <label>নাম</label>
-    <input type="text" placeholder="আপনার নাম" required>
+    <input type="text" id="name" required placeholder="আপনার নাম">
 
     <label>মোবাইল নাম্বার</label>
-    <input type="tel" placeholder="01XXXXXXXXX" required>
+    <input type="tel" id="mobile" required placeholder="01XXXXXXXXX">
 
     <label>পাসওয়ার্ড</label>
-    <input type="password" placeholder="পাসওয়ার্ড" required>
+    <input type="password" id="password" required placeholder="পাসওয়ার্ড">
 
     <label>কনফার্ম পাসওয়ার্ড</label>
-    <input type="password" placeholder="আবার পাসওয়ার্ড" required>
+    <input type="password" id="cpassword" required placeholder="আবার পাসওয়ার্ড">
 
     <button type="submit">একাউন্ট তৈরি করুন</button>
   </form>
@@ -73,6 +73,22 @@
     আগে থেকেই একাউন্ট আছে? <a href="index.html">লগইন করুন</a>
   </div>
 </div>
+
+<script>
+function signup(e){
+  e.preventDefault();
+
+  const p = document.getElementById("password").value;
+  const cp = document.getElementById("cpassword").value;
+
+  if(p !== cp){
+    alert("❌ পাসওয়ার্ড মিলছে না");
+    return;
+  }
+
+  alert("✅ Signup কাজ করছে (Backend এখনো যুক্ত হয়নি)");
+}
+</script>
 
 </body>
 </html>
