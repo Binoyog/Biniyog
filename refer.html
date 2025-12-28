@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<title>Biniyog | Refer & Earn</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body{margin:0;font-family:Arial;background:#f1f5f9}
+.header{background:#4338ca;color:#fff;padding:15px;text-align:center}
+.card{background:#fff;margin:15px;padding:15px;border-radius:12px}
+input,button{
+  width:100%;
+  padding:10px;
+  margin-top:10px;
+  border-radius:6px;
+  border:1px solid #ccc;
+}
+button{
+  background:#22c55e;
+  color:#fff;
+  border:none;
+  font-size:16px;
+}
+.history{border-bottom:1px solid #eee;padding:6px 0;font-size:14px}
+.back{text-align:center;margin:15px}
+.back a{text-decoration:none;color:#4338ca;font-weight:bold}
+</style>
+</head>
+
+<body>
+
+<script>
+const user = localStorage.getItem("loggedInUser");
+if(!user){ location.href="index.html"; }
+</script>
+
+<div class="header">
+<h2>🤝 Refer & Earn</h2>
+</div>
+
+<div class="card">
+<h3>📌 Refer Code</h3>
+<input type="text" id="myCode" readonly>
+<button onclick="copyCode()">Copy Refer Code</button>
+</div>
+
+<div class="card">
+<h3>➕ Apply Refer Code</h3>
+<input type="text" id="refCode" placeholder="Refer Code লিখুন">
+<button onclick="applyRefer()">Apply</button>
+</div>
+
+<div class="card">
+<h3>💰 Refer Bonus History</h3>
+<div id="history"></div>
+</div>
+
+<div class="back">
+<a href="dashboard.html">⬅ Dashboard</a>
+</div>
+
+<script>
+// generate refer code
+let myCode = "BIN" + user.slice(-4);
+document.getElementById("myCode").value = myCode;
+
+function copyCode(){
+  navigator.clipboard.writeText(myCode);
+  alert("Refer code copied ✅");
+}
+
+function applyRefer(){
+  let code = document.getElementById("refCode").value.trim();
+  if(code === myCode || code === ""){
+    alert("❌ Invalid refer code");
+    return;
+  }
+
+  let refs = JSON.parse(localStorage.getItem("refers")) || [];
+  if(refs.find(r=>r.user===user)){
+    alert("❌ Refer already applied");
+    return;
+  }
+
+  refs.push({
+    user:user,
+    parent:code,
+    level:1
+  });
+
+  localStorage.setItem("refers", JSON.stringify(refs));
+
+  // first refer bonus 100
+  let deposits = JSON.parse(localStorage.getItem("deposits"))||[];
+  deposits.push({
+    user:code,
+    amount:100,
+    method:"Refer Bonus (Level 1)"
+  });
+  localStorage.setItem("deposits", JSON.stringify(deposits));
+
+  alert("✅ Refer Applied & ৳100 Bonus Added");
+}
+
+function loadHistory(){
+  let deposits = JSON.parse(localStorage.getItem("deposits"))||[];
+  let html="";
+
+  deposits.filter(d=>d.method.includes("Refer") && d.user===user)
+  .forEach(d=>{
+    html+=`<div class="history">৳${d.amount} - ${d.method}</div>`;
+  });
+
+  document.getElementById("history").innerHTML =
+    html || "কোনো Refer Bonus নেই";
+}
+
+loadHistory();
+</script>
+
+</body>
+</html>
