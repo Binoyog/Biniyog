@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <title>Biniyog | Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #020617;
+      color: #fff;
+    }
+    .header {
+      background: #0f172a;
+      padding: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .header h2 {
+      margin: 0;
+    }
+    .logout {
+      background: #ef4444;
+      border: none;
+      padding: 8px 14px;
+      color: #fff;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .content {
+      padding: 20px;
+    }
+    .card {
+      background: #020617;
+      border: 1px solid #1e293b;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="header">
+    <h2>📊 Dashboard</h2>
+    <button class="logout" onclick="logout()">Logout</button>
+  </div>
+
+  <div class="content">
+    <div class="card">
+      <h3>স্বাগতম 👋</h3>
+      <p>মোবাইল নাম্বার: <strong id="userPhone"></strong></p>
+    </div>
+
+    <div class="card">
+      <h3>Biniyog Status</h3>
+      <p>আপনার অ্যাকাউন্ট এখন সক্রিয় আছে।</p>
+    </div>
+  </div>
+
+  <script>
+    // Login check
+    const loggedInUser = localStorage.getItem("loggedInUser");
+
+    if (!loggedInUser) {
+      // Login না থাকলে Login পেজে পাঠাও
+      window.location.href = "index.html";
+    } else {
+      document.getElementById("userPhone").innerText = loggedInUser;
+    }
+
+    function logout() {
+      localStorage.removeItem("loggedInUser");
+      window.location.href = "index.html";
+    }
+  </script>
+
+</body>
+</html>
