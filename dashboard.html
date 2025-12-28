@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Biniyog Dashboard</title>
+
+<!-- Font Awesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+
+<style>
+body{
+  margin:0;
+  font-family: Arial, sans-serif;
+  background:#f3f5f7;
+}
+
+/* TOP BAR */
+.topbar{
+  background:#d9267a;
+  color:#fff;
+  padding:14px 16px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+
+.user-info{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.user-info i{
+  font-size:28px;
+}
+
+.balance-btn{
+  background:#fff;
+  color:#d9267a;
+  padding:6px 12px;
+  border-radius:20px;
+  font-size:14px;
+  font-weight:bold;
+}
+
+.logout{
+  font-size:22px;
+  cursor:pointer;
+}
+
+/* NOTICE */
+.notice{
+  margin:14px;
+  background:#ff9800;
+  color:#fff;
+  padding:10px;
+  border-radius:10px;
+  text-align:center;
+  font-size:14px;
+}
+
+/* DASHBOARD GRID */
+.dashboard{
+  display:grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap:16px;
+  padding:16px;
+}
+
+/* CARD */
+.card{
+  background:#fff;
+  border-radius:22px;
+  padding:28px 10px;
+  text-align:center;
+  box-shadow:0 6px 14px rgba(0,0,0,0.12);
+  cursor:pointer;
+}
+
+.card i{
+  font-size:86px;
+  color:#d9267a;
+  margin-bottom:14px;
+}
+
+.card span{
+  display:block;
+  font-size:18px;
+  font-weight:bold;
+}
+
+.card:active{
+  transform:scale(0.96);
+}
+</style>
+</head>
+
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="user-info">
+    <i class="fas fa-user-circle"></i>
+    <strong>User</strong>
+  </div>
+
+  <div class="balance-btn">৳ Balance</div>
+
+  <div class="logout" onclick="logout()">
+    <i class="fas fa-right-from-bracket"></i>
+  </div>
+</div>
+
+<!-- NOTICE -->
+<div class="notice">
+  🔔 Welcome to Biniyog Dashboard
+</div>
+
+<!-- DASHBOARD -->
+<div class="dashboard">
+
+  <div class="card" onclick="location.href='task.html'">
+    <i class="fas fa-list-check"></i>
+    <span>Task</span>
+  </div>
+
+  <div class="card" onclick="location.href='deposit.html'">
+    <i class="fas fa-money-bill-wave"></i>
+    <span>Deposit</span>
+  </div>
+
+  <div class="card" onclick="location.href='withdraw.html'">
+    <i class="fas fa-arrow-up-right-dots"></i>
+    <span>Withdraw</span>
+  </div>
+
+  <div class="card" onclick="location.href='plan.html'">
+    <i class="fas fa-chart-line"></i>
+    <span>Plan</span>
+  </div>
+
+  <div class="card" onclick="location.href='profile.html'">
+    <i class="fas fa-user"></i>
+    <span>Profile</span>
+  </div>
+
+  <div class="card" onclick="location.href='refer.html'">
+    <i class="fas fa-users"></i>
+    <span>Refer</span>
+  </div>
+
+  <div class="card" onclick="location.href='transaction.html'">
+    <i class="fas fa-right-left"></i>
+    <span>Transaction</span>
+  </div>
+
+  <div class="card" onclick="location.href='about.html'">
+    <i class="fas fa-circle-info"></i>
+    <span>About</span>
+  </div>
+
+</div>
+
+<script>
+function logout(){
+  if(confirm("Are you sure you want to logout?")){
+    window.location.href = "index.html";
+  }
+}
+</script>
+
+</body>
+</html>
