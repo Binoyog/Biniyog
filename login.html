@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Biniyog Login</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:'Poppins',sans-serif;
+}
+body{
+    background:#f2f2f2;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+.container{
+    width:100%;
+    max-width:380px;
+    background:#fff;
+    border-radius:20px;
+    padding:30px 25px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.1);
+    text-align:center;
+}
+.logo{
+    width:110px;
+    margin:0 auto 10px;
+}
+.logo img{
+    width:100%;
+}
+h2{
+    color:#6a1b9a;
+    margin-bottom:25px;
+}
+.input-group{
+    text-align:left;
+    margin-bottom:18px;
+}
+.input-group label{
+    font-size:14px;
+    color:#555;
+}
+.input-group input{
+    width:100%;
+    border:none;
+    border-bottom:2px solid #ccc;
+    padding:10px 5px;
+    font-size:16px;
+    outline:none;
+}
+.input-group input:focus{
+    border-color:#6a1b9a;
+}
+.btn{
+    margin-top:25px;
+    width:100%;
+    padding:14px;
+    border:none;
+    border-radius:30px;
+    background:#6a1b9a;
+    color:#fff;
+    font-size:16px;
+    font-weight:600;
+    cursor:pointer;
+}
+.btn:hover{
+    background:#4a148c;
+}
+.links{
+    margin-top:20px;
+    font-size:14px;
+}
+.links a{
+    color:#6a1b9a;
+    text-decoration:none;
+    font-weight:600;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="logo">
+        <!-- নিজের লোগো চাইলে এখানে img দিন -->
+        <img src="https://cdn-icons-png.flaticon.com/512/3135/3135706.png">
+    </div>
+
+    <h2>Welcome</h2>
+
+    <form>
+        <div class="input-group">
+            <label>Mobile Number</label>
+            <input type="tel" placeholder="01XXXXXXXXX" required>
+        </div>
+
+        <div class="input-group">
+            <label>Password</label>
+            <input type="password" placeholder="Enter password" required>
+        </div>
+
+        <button class="btn">LOGIN</button>
+    </form>
+
+    <div class="links">
+        <p>Not registered yet?</p>
+        <a href="signup.html">Open new account</a>
+    </div>
+
+</div>
+
+</body>
+</html>
