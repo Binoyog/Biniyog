@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <title>Biniyog | Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f3f3f3;
+    }
+
+    .topbar {
+      background: #d81b60;
+      color: #fff;
+      padding: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .balance {
+      background: #fff;
+      color: #d81b60;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-weight: bold;
+    }
+
+    .welcome {
+      margin: 15px;
+      background: orange;
+      color: #fff;
+      padding: 10px;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .menu {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 15px;
+      padding: 15px;
+    }
+
+    .item {
+      background: #d81b60;
+      color: #fff;
+      border-radius: 50%;
+      width: 70px;
+      height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: auto;
+      font-size: 22px;
+    }
+
+    .label {
+      text-align: center;
+      margin-top: 5px;
+      font-size: 14px;
+    }
+
+    .card {
+      background: #fff;
+      margin: 15px;
+      padding: 10px;
+      border-radius: 10px;
+    }
+
+    img {
+      width: 100%;
+      border-radius: 10px;
+    }
+
+    button {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="topbar">
+    <div>👤 User</div>
+    <div class="balance">৳ <span id="balance">0</span></div>
+    <button onclick="logout()">Logout</button>
+  </div>
+
+  <div class="welcome">
+    বিনিয়োগ শেয়ার মার্কেটে স্বাগতম
+  </div>
+
+  <div class="menu">
+    <div>
+      <div class="item">✔</div>
+      <div class="label">Task</div>
+    </div>
+    <div>
+      <div class="item">৳</div>
+      <div class="label">Deposit</div>
+    </div>
+    <div>
+      <div class="item">💳</div>
+      <div class="label">Withdraw</div>
+    </div>
+    <div>
+      <div class="item">📄</div>
+      <div class="label">Plan</div>
+    </div>
+
+    <div>
+      <div class="item">👤</div>
+      <div class="label">Profile</div>
+    </div>
+    <div>
+      <div class="item">👥</div>
+      <div class="label">Refer</div>
+    </div>
+    <div>
+      <div class="item">🔁</div>
+      <div class="label">Transaction</div>
+    </div>
+    <div>
+      <div class="item">ℹ</div>
+      <div class="label">About</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <img src="https://images.unsplash.com/photo-1511707171634-5f897ff02aa9">
+  </div>
+
+  <script type="module" src="js/firebase.js"></script>
+  <script type="module" src="js/dashboard.js"></script>
+
+</body>
+</html>
