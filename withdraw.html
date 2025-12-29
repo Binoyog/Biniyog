@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Withdraw Request</title>
+
+<style>
+body{
+    margin:0;
+    font-family:Arial, sans-serif;
+    background:#f2f2f2;
+}
+.container{
+    max-width:400px;
+    margin:30px auto;
+    background:#fff;
+    padding:20px;
+    border-radius:12px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.2);
+}
+h2{
+    text-align:center;
+    margin-bottom:20px;
+}
+input, select{
+    width:100%;
+    padding:12px;
+    margin-bottom:15px;
+    border-radius:8px;
+    border:1px solid #ccc;
+    font-size:16px;
+}
+button{
+    width:100%;
+    padding:12px;
+    background:#d81b60;
+    color:#fff;
+    border:none;
+    border-radius:8px;
+    font-size:18px;
+    cursor:pointer;
+}
+button:hover{
+    background:#ad1457;
+}
+.note{
+    font-size:14px;
+    color:#666;
+    text-align:center;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+    <h2>উইথড্র রিকোয়েস্ট</h2>
+
+    <input type="text" id="number" placeholder="আপনার নাম্বার">
+    <input type="number" id="amount" placeholder="Amount (Min 500)">
+    
+    <select id="method">
+        <option value="">পেমেন্ট মেথড</option>
+        <option>Bkash</option>
+        <option>Nagad</option>
+        <option>Rocket</option>
+    </select>
+
+    <button onclick="submitWithdraw()">Submit</button>
+    <p class="note">উইথড্র স্ট্যাটাস Pending থাকবে, Admin approval প্রয়োজন</p>
+</div>
+
+<script>
+function submitWithdraw(){
+    let number = document.getElementById("number").value.trim();
+    let amount = parseInt(document.getElementById("amount").value);
+    let method = document.getElementById("method").value;
+
+    if(number === "" || !amount || method === ""){
+        alert("সব তথ্য সঠিকভাবে পূরণ করুন");
+        return;
+    }
+
+    if(amount < 500){
+        alert("Minimum withdraw 500 টাকা");
+        return;
+    }
+
+    let balance = parseInt(localStorage.getItem("balance")) || 0;
+    if(amount > balance){
+        alert("আপনার ব্যালেন্স পর্যাপ্ত নয়");
+        return;
+    }
+
+    let withdraws = JSON.parse(localStorage.getItem("withdrawRequests")) || [];
+
+    withdraws.push({
+        number:number,
+        amount:amount,
+        method:method,
+        status:"Pending",
+        date:new Date().toLocaleString()
+    });
+
+    localStorage.setItem("withdrawRequests", JSON.stringify(withdraws));
+    alert("Withdraw request submitted (Pending)");
+    window.location.href="dashboard.html";
+}
+</script>
+
+</body>
+</html>
