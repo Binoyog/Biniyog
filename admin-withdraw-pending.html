@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Admin Withdraw Approval</title>
+</head>
+<body>
+<h2>Withdraw Pending</h2>
+<div id="list"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import {
+  getFirestore, collection, getDocs, doc,
+  updateDoc, addDoc, deleteDoc, increment
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const list = document.getElementById("list");
+
+async function load() {
+  list.innerHTML = "";
+  const snap = await getDocs(collection(db, "withdraw_requests"));
+  snap.forEach(s => {
+    const d = s.data();
+    const div = document.createElement("div");
+    div.innerHTML = `
+      <p>User: ${d.userId}</p>
+      <p>Amount: ৳${d.amount}</p>
+      <button onclick="approve('${s.id}','${d.userId}',${d.amount})">Approve</button>
+      <button onclick="reject('${s.id}')">Reject</button>
+      <hr>
+    `;
+    list.appendChild(div);
+  });
+}
+
+window.approve = async (id, uid, amount) => {
+  await updateDoc(doc(db, "users", uid), {
+    balance: increment(-amount)
+  });
+  await addDoc(collection(db, "transactions"), {
+    userId: uid,
+    amount,
+    type: "withdraw",
+    status: "approved",
+    actionAt: new Date()
+  });
+  await deleteDoc(doc(db, "withdraw_requests", id));
+  load();
+};
+
+window.reject = async (id) => {
+  await deleteDoc(doc(db, "withdraw_requests", id));
+  load();
+};
+
+load();
+</script>
+</body>
+</html>
