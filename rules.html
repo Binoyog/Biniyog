@@ -1,0 +1,55 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /* ================= USERS ================= */
+    match /users/{userId} {
+      // User শুধু নিজের data পড়তে পারবে
+      allow read: if request.auth != null
+                  && request.auth.uid == userId;
+
+      // Balance update শুধু Admin পারবে
+      allow update: if request.auth != null
+                    && request.auth.token.admin == true;
+
+      // User নিজে create করতে পারবে (signup time)
+      allow create: if request.auth != null;
+    }
+
+    /* ================= DEPOSITS ================= */
+    match /deposits/{id} {
+      // User deposit submit
+      allow create: if request.auth != null;
+
+      // User নিজের deposit দেখতে পারবে
+      allow read: if request.auth != null;
+
+      // Admin approve / reject
+      allow update, delete: if request.auth != null
+                            && request.auth.token.admin == true;
+    }
+
+    /* ================= WITHDRAW ================= */
+    match /withdraw_requests/{id} {
+      // User withdraw request submit
+      allow create: if request.auth != null;
+
+      // User নিজের withdraw history দেখতে পারবে
+      allow read: if request.auth != null;
+
+      // Admin approve / reject
+      allow update, delete: if request.auth != null
+                            && request.auth.token.admin == true;
+    }
+
+    /* ================= TRANSACTIONS ================= */
+    match /transactions/{id} {
+      // User শুধু read
+      allow read: if request.auth != null;
+
+      // Only admin can write
+      allow create, update, delete: if request.auth != null
+                                    && request.auth.token.admin == true;
+    }
+  }
+}
