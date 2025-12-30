@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<title>Biniyog | Phone Login</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<script src="https://www.google.com/recaptcha/api.js"></script>
+
+<style>
+body{
+  font-family: Arial, sans-serif;
+  background:#f5f5f5;
+  padding:20px;
+}
+.box{
+  background:#fff;
+  padding:20px;
+  border-radius:8px;
+}
+input,button{
+  width:100%;
+  padding:10px;
+  margin:8px 0;
+}
+button{
+  background:#e91e63;
+  color:#fff;
+  border:none;
+  cursor:pointer;
+}
+</style>
+</head>
+<body>
+
+<div class="box">
+  <h3>📱 মোবাইল নাম্বার দিয়ে লগইন</h3>
+
+  <input type="text" id="phone" placeholder="01XXXXXXXXX">
+  <div id="recaptcha-container"></div>
+  <button onclick="sendOTP()">OTP পাঠাও</button>
+
+  <hr>
+
+  <input type="text" id="otp" placeholder="OTP কোড">
+  <button onclick="verifyOTP()">লগইন</button>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+import { getAuth, signInWithPhoneNumber, RecaptchaVerifier, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
+import { getFirestore, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+
+/* 🔥 Firebase Config */
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "XXXX",
+  appId: "XXXX"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+/* 🔐 reCAPTCHA */
+window.recaptchaVerifier = new RecaptchaVerifier(
+  auth,
+  "recaptcha-container",
+  { size: "normal" }
+);
+
+/* 📩 Send OTP */
+window.sendOTP = async function(){
+  const phone = document.getElementById("phone").value;
+  if(!phone.startsWith("01")){
+    alert("সঠিক নাম্বার দিন");
+    return;
+  }
+
+  const fullPhone = "+88" + phone;
+
+  try{
+    window.confirmationResult =
+      await signInWithPhoneNumber(auth, fullPhone, window.recaptchaVerifier);
+
+    alert("✅ OTP পাঠানো হয়েছে");
+  }catch(err){
+    alert(err.message);
+  }
+}
+
+/* ✅ Verify OTP */
+window.verifyOTP = async function(){
+  const code = document.getElementById("otp").value;
+
+  try{
+    await window.confirmationResult.confirm(code);
+  }catch(err){
+    alert("❌ ভুল OTP");
+  }
+}
+
+/* 👤 Auth Success → Create User Doc */
+onAuthStateChanged(auth, async (user)=>{
+  if(user){
+    const userRef = doc(db, "users", user.uid);
+
+    await setDoc(userRef, {
+      phone: user.phoneNumber,
+      role: "user",
+      balance: 0,
+      createdAt: serverTimestamp()
+    }, { merge:true });
+
+    window.location.href = "dashboard.html";
+  }
+});
+</script>
+
+</body>
+</html>
