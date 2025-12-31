@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<title>Biniyog | Admin Panel</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body{
+  margin:0;
+  font-family: Arial, sans-serif;
+  background:#f4f6f8;
+}
+.container{
+  max-width:900px;
+  margin:auto;
+  padding:20px;
+}
+h2{margin-top:0}
+.card{
+  background:#fff;
+  padding:15px;
+  margin-bottom:20px;
+  border-radius:8px;
+  box-shadow:0 2px 6px rgba(0,0,0,0.1);
+}
+input, button{
+  width:100%;
+  padding:10px;
+  margin-top:10px;
+}
+button{
+  background:#0d6efd;
+  color:#fff;
+  border:none;
+  border-radius:5px;
+  cursor:pointer;
+}
+button.reject{
+  background:#dc3545;
+}
+.row{
+  display:flex;
+  gap:10px;
+}
+.row button{flex:1}
+.hidden{display:none}
+.item{
+  border-bottom:1px solid #ddd;
+  padding:10px 0;
+}
+small{color:#666}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <!-- LOGIN -->
+  <div id="loginBox" class="card">
+    <h2>Admin Login</h2>
+    <input type="email" id="email" placeholder="Admin Email">
+    <input type="password" id="password" placeholder="Password">
+    <button onclick="adminLogin()">Login</button>
+    <p id="loginMsg"></p>
+  </div>
+
+  <!-- ADMIN PANEL -->
+  <div id="adminPanel" class="hidden">
+
+    <div class="card">
+      <h2>Pending Deposits</h2>
+      <div id="depositList">Loading...</div>
+    </div>
+
+    <div class="card">
+      <h2>Pending Withdraws</h2>
+      <div id="withdrawList">Loading...</div>
+    </div>
+
+  </div>
+
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+import { 
+  getAuth, 
+  signInWithEmailAndPassword, 
+  onAuthStateChanged 
+} from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
+import { 
+  getFirestore, 
+  collection, 
+  query, 
+  where, 
+  getDocs, 
+  updateDoc, 
+  doc 
+} from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+
+/* Firebase Config */
+const firebaseConfig = {
+  apiKey: "AIzaSyBFsTzlRPoWHVXEHbKrPdwxslxZGa7Kqfw",
+  authDomain: "biniyog-95d00.firebaseapp.com",
+  projectId: "biniyog-95d00",
+  storageBucket: "biniyog-95d00.firebasestorage.app",
+  messagingSenderId: "523238228802",
+  appId: "1:523238228802:web:a65183bdc4c268f94efedb"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+/* Admin Login */
+window.adminLogin = async () => {
+  const email = email.value;
+  const password = password.value;
+
+  try{
+    await signInWithEmailAndPassword(auth, email, password);
+  }catch(err){
+    loginMsg.innerText = err.message;
+  }
+};
+
+/* Auth Check */
+onAuthStateChanged(auth, user=>{
+  if(user){
+    loginBox.classList.add("hidden");
+    adminPanel.classList.remove("hidden");
+    loadDeposits();
+    loadWithdraws();
+  }
+});
+
+/* Load Deposits */
+async function loadDeposits(){
+  depositList.innerHTML = "";
+  const q = query(collection(db,"deposits"), where("status","==","pending"));
+  const snap = await getDocs(q);
+
+  if(snap.empty){
+    depositList.innerHTML = "No pending deposits";
+    return;
+  }
+
+  snap.forEach(d=>{
+    const data = d.data();
+    depositList.innerHTML += `
+      <div class="item">
+        <b>${data.phone}</b><br>
+        Amount: ৳${data.amount}<br>
+        <small>${data.method}</small>
+        <div class="row">
+          <button onclick="approveDeposit('${d.id}')">Approve</button>
+          <button class="reject" onclick="rejectDeposit('${d.id}')">Reject</button>
+        </div>
+      </div>
+    `;
+  });
+}
+
+/* Load Withdraws */
+async function loadWithdraws(){
+  withdrawList.innerHTML = "";
+  const q = query(collection(db,"withdraws"), where("status","==","pending"));
+  const snap = await getDocs(q);
+
+  if(snap.empty){
+    withdrawList.innerHTML = "No pending withdraws";
+    return;
+  }
+
+  snap.forEach(d=>{
+    const data = d.data();
+    withdrawList.innerHTML += `
+      <div class="item">
+        <b>${data.phone}</b><br>
+        Amount: ৳${data.amount}
+        <div class="row">
+          <button onclick="approveWithdraw('${d.id}')">Approve</button>
+          <button class="reject" onclick="rejectWithdraw('${d.id}')">Reject</button>
+        </div>
+      </div>
+    `;
+  });
+}
+
+/* Actions */
+window.approveDeposit = async(id)=>{
+  await updateDoc(doc(db,"deposits",id),{status:"approved"});
+  loadDeposits();
+};
+
+window.rejectDeposit = async(id)=>{
+  await updateDoc(doc(db,"deposits",id),{status:"rejected"});
+  loadDeposits();
+};
+
+window.approveWithdraw = async(id)=>{
+  await updateDoc(doc(db,"withdraws",id),{status:"approved"});
+  loadWithdraws();
+};
+
+window.rejectWithdraw = async(id)=>{
+  await updateDoc(doc(db,"withdraws",id),{status:"rejected"});
+  loadWithdraws();
+};
+</script>
+
+</body>
+</html>
