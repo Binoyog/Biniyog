@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Binoyog | Login</title>
-
 <style>
 *{box-sizing:border-box}
 body{
@@ -79,7 +78,6 @@ button{
 .hide{display:none}
 </style>
 </head>
-
 <body>
 
 <div class="container">
@@ -89,7 +87,6 @@ button{
   </div>
 
   <div class="card">
-
     <div class="tabs">
       <div class="tab active" id="loginTab" onclick="showLogin()">Log in</div>
       <div class="tab" id="signupTab" onclick="showSignup()">Sign up</div>
@@ -105,14 +102,13 @@ button{
 
     <!-- SIGNUP -->
     <div id="signupBox" class="hide">
-      <input id="name" placeholder="Full name">
+      <input id="fullName" placeholder="Full name">
       <input id="signupPhone" placeholder="Phone number">
       <input id="signupPass" type="password" placeholder="Password">
       <input id="signupPass2" type="password" placeholder="Confirm password">
       <input id="referCode" placeholder="Refer code (Optional)">
       <button onclick="signup()">Continue</button>
     </div>
-
   </div>
 </div>
 
@@ -150,6 +146,7 @@ window.showSignup = ()=>{
   loginTab.classList.remove("active");
   signupTab.classList.add("active");
 };
+
 window.showLogin = ()=>{
   signupBox.classList.add("hide");
   loginBox.classList.remove("hide");
@@ -159,6 +156,11 @@ window.showLogin = ()=>{
 
 /* ================= SIGNUP ================= */
 window.signup = async ()=>{
+  if(!fullName.value || !signupPhone.value || !signupPass.value){
+    alert("All fields are required");
+    return;
+  }
+
   if(signupPass.value !== signupPass2.value){
     alert("Password mismatch");
     return;
@@ -167,11 +169,15 @@ window.signup = async ()=>{
   const email = signupPhone.value + "@binoyog.com";
 
   try{
-    const cred = await createUserWithEmailAndPassword(auth,email,signupPass.value);
+    const cred = await createUserWithEmailAndPassword(
+      auth,
+      email,
+      signupPass.value
+    );
 
     await setDoc(doc(db,"users",cred.user.uid),{
       uid: cred.user.uid,
-      name: name.value,
+      name: fullName.value,
       phone: signupPhone.value,
       referCode: referCode.value || null,
       balance: 0,
@@ -181,6 +187,7 @@ window.signup = async ()=>{
 
     alert("Signup successful. Please login.");
     showLogin();
+
   }catch(e){
     alert(e.message);
   }
@@ -200,7 +207,7 @@ window.login = async ()=>{
   }
 };
 
-/* ================= FORGOT PASSWORD (AUTO APPROVED) ================= */
+/* ================= FORGOT PASSWORD ================= */
 window.forgotPassword = async ()=>{
   const phone = prompt("Enter your phone number");
   if(!phone) return;
@@ -211,7 +218,7 @@ window.forgotPassword = async ()=>{
     await addDoc(collection(db,"passwordResets"),{
       phone: phone,
       newPassword: newPass,
-      status: "approved",   // ✅ auto approved
+      status: "approved",
       createdAt: serverTimestamp()
     });
 
