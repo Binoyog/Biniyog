@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Binoyog | Admin Login</title>
+<style>
+body{
+  margin:0;
+  font-family:Arial,Helvetica,sans-serif;
+  background:#0f1419;
+  color:#fff;
+}
+.container{
+  max-width:400px;
+  margin:auto;
+  padding:20px;
+}
+.header{
+  text-align:center;
+  padding:25px 0;
+}
+.header h1{
+  margin:0;
+  color:#ffb703;
+  font-size:26px;
+}
+input,button{
+  width:100%;
+  padding:12px;
+  margin-top:10px;
+  border:none;
+  border-radius:6px;
+}
+input{
+  background:#222a30;
+  color:#fff;
+}
+button{
+  background:#ffb703;
+  color:#000;
+  font-weight:bold;
+  cursor:pointer;
+}
+.note{
+  text-align:center;
+  margin-top:10px;
+  font-size:14px;
+  color:#aaa;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h1>Admin Login</h1>
+    <p>Authorized access only</p>
+  </div>
+
+  <input id="adminPhone" placeholder="Admin phone">
+  <input id="adminPass" type="password" placeholder="Password">
+  <button onclick="adminLogin()">Login</button>
+  <div class="note">Only admin accounts allowed</div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+import {
+  getAuth,
+  signInWithEmailAndPassword
+} from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
+import {
+  getFirestore,
+  doc,
+  getDoc
+} from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+
+function normalizePhone(phone){
+  phone = phone.trim();
+  if(phone.startsWith("+88")) phone = phone.slice(3);
+  if(phone.startsWith("88")) phone = phone.slice(2);
+  return phone;
+}
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBFsTzlRPoWHVXEHbKrPdwxslxZGa7Kqfw",
+  authDomain: "biniyog-95d00.firebaseapp.com",
+  projectId: "biniyog-95d00"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+window.adminLogin = async ()=>{
+  try{
+    const phone = normalizePhone(adminPhone.value);
+    const email = phone + "@binoyog.com";
+
+    const cred = await signInWithEmailAndPassword(
+      auth, email, adminPass.value
+    );
+
+    const snap = await getDoc(doc(db,"users",cred.user.uid));
+
+    if(!snap.exists() || snap.data().role !== "admin"){
+      alert("❌ Unauthorized (Not admin)");
+      await auth.signOut();
+      return;
+    }
+
+    location.href = "admin-dashboard.html";
+
+  }catch(e){
+    alert("❌ Login failed");
+  }
+};
+</script>
+
+</body>
+</html>
