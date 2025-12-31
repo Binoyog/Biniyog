@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Biniyog | Admin Login</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body{
+  margin:0;
+  font-family: Arial, sans-serif;
+  background:#f5f6fa;
+}
+.card{
+  max-width:400px;
+  margin:100px auto;
+  background:#fff;
+  padding:25px;
+  border-radius:10px;
+  box-shadow:0 4px 15px rgba(0,0,0,.1);
+}
+h2{
+  text-align:center;
+}
+input,button{
+  width:100%;
+  padding:12px;
+  margin-top:12px;
+  font-size:15px;
+}
+button{
+  background:#1677ff;
+  color:#fff;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
+}
+button:hover{
+  opacity:.9;
+}
+.error{
+  color:red;
+  margin-top:10px;
+  text-align:center;
+}
+</style>
+</head>
+
+<body>
+
+<div class="card">
+  <h2>Admin Login</h2>
+  <input type="email" id="email" placeholder="Admin Email">
+  <input type="password" id="password" placeholder="Password">
+  <button id="loginBtn">Login</button>
+  <div class="error" id="error"></div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+  import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
+  import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBFsTzlRPoWHVXEHbKrPdwxslxZGa7Kqfw",
+    authDomain: "biniyog-95d00.firebaseapp.com",
+    projectId: "biniyog-95d00",
+    storageBucket: "biniyog-95d00.firebasestorage.app",
+    messagingSenderId: "523238228802",
+    appId: "1:523238228802:web:a65183bdc4c268f94efedb"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  // ✅ FINAL ADMIN UID
+  const ADMIN_UID = "TIeY2p6IaNS2IOwCWTBZCSLk65f1";
+
+  document.getElementById("loginBtn").onclick = async () => {
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+    const errorBox = document.getElementById("error");
+
+    errorBox.innerText = "";
+
+    try {
+      const res = await signInWithEmailAndPassword(auth, email, password);
+      const user = res.user;
+
+      // UID check
+      if (user.uid !== ADMIN_UID) {
+        errorBox.innerText = "Access denied";
+        return;
+      }
+
+      // 🔐 role check from users collection
+      const snap = await getDoc(doc(db, "users", user.uid));
+      if (!snap.exists() || snap.data().role !== "admin") {
+        errorBox.innerText = "Access denied";
+        return;
+      }
+
+      // ✅ success
+      window.location.href = "admin-dashboard.html";
+
+    } catch (err) {
+      errorBox.innerText = "Login failed";
+    }
+  };
+</script>
+
+</body>
+</html>
