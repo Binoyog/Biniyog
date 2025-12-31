@@ -84,7 +84,7 @@ window.login = async function(){
     }
 
     // 🔐 Firestore role check (extra security)
-    const snap = await getDoc(doc(db, "users", user.uid));
+    const snap = await getDoc(doc(db, "admins", user.uid));
     if(!snap.exists() || snap.data().role !== "admin"){
       errorBox.innerText = "Access denied (Role mismatch)";
       return;
