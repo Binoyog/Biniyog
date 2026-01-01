@@ -110,7 +110,7 @@ button{
   <button id="backHome" class="back-btn">⬅ Dashboard এ ফিরে যান</button>
 
   <div class="note">
-    ডিপোজিট সাবমিট হলে অ্যাডমিন অ্যাপ্রুভের পর ব্যালেন্স যুক্ত হবে
+    ডিপোজিট দ্রুত করতে সঠিক ট্রানজেকশন আইডি ব্যবহার করুন
   </div>
 </div>
 
@@ -162,7 +162,7 @@ document.getElementById("depositForm").addEventListener("submit",async e=>{
     createdAt: serverTimestamp()
   });
 
-  alert("ডিপোজিট সাবমিট হয়েছে, অ্যাডমিন অ্যাপ্রুভের অপেক্ষায়");
+  alert("ডিপোজিট সাবমিট হয়েছে, ট্রানজেকশন হিস্ট্রি চেক করুন");
   location.href="transaction.html";
 });
 
