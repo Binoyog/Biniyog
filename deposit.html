@@ -85,7 +85,7 @@ button{
 
   <div class="info">
     <b>Nagad / Bkash</b><br>
-   ক্যাশআউট নাম্বার: <b>01938433939</b><br>
+    ক্যাশআউট নাম্বার: <b>01938433939</b><br>
     Minimum Deposit: <b>500৳</b>
   </div>
 
@@ -103,6 +103,10 @@ button{
 
     <label>Transaction ID</label>
     <input type="text" id="trxId" placeholder="Transaction ID লিখুন" required>
+
+    <!-- ✅ NEW OPTION -->
+    <label>আপনার নাম্বার</label>
+    <input type="tel" id="userPhone" placeholder="আপনার মোবাইল নাম্বার লিখুন" required>
 
     <button type="submit" class="submit-btn">Submit Deposit</button>
   </form>
@@ -139,14 +143,20 @@ onAuthStateChanged(auth,user=>{
   }
 });
 
+const methodEl = document.getElementById("method");
+const amountEl = document.getElementById("amount");
+const trxIdEl  = document.getElementById("trxId");
+const userPhoneEl = document.getElementById("userPhone");
+
 document.getElementById("depositForm").addEventListener("submit",async e=>{
   e.preventDefault();
 
   const method = methodEl.value;
   const amount = Number(amountEl.value);
   const trxId  = trxIdEl.value.trim();
+  const userPhone = userPhoneEl.value.trim();
 
-  if(!method || amount < 500 || !trxId){
+  if(!method || amount < 500 || !trxId || userPhone.length < 11){
     alert("সব তথ্য সঠিকভাবে পূরণ করুন");
     return;
   }
@@ -154,6 +164,7 @@ document.getElementById("depositForm").addEventListener("submit",async e=>{
   await addDoc(collection(db,"deposits"),{
     uid: currentUser.uid,
     phone: currentUser.phoneNumber || "",
+    customerPhone: userPhone,   // ✅ NEW FIELD
     type: "deposit",
     method,
     amount,
@@ -165,10 +176,6 @@ document.getElementById("depositForm").addEventListener("submit",async e=>{
   alert("ডিপোজিট সাবমিট হয়েছে, ট্রানজেকশন হিস্ট্রি চেক করুন");
   location.href="transaction.html";
 });
-
-const methodEl = document.getElementById("method");
-const amountEl = document.getElementById("amount");
-const trxIdEl  = document.getElementById("trxId");
 
 document.getElementById("backHome").onclick = ()=>{
   location.href="dashboard.html";
