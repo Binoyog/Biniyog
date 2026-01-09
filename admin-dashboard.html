@@ -11,11 +11,28 @@ body{
   background:#f2f4f7;
 }
 .container{
-  max-width:1100px;
+  max-width:1200px;
   margin:auto;
   padding:20px;
 }
+.logout{
+  background:#000;
+  color:#fff;
+  border:none;
+  padding:10px;
+  width:100%;
+  margin-bottom:20px;
+  border-radius:5px;
+  cursor:pointer;
+}
+.dashboard{
+  display:flex;
+  gap:20px;
+  flex-wrap:wrap;
+}
 .card{
+  flex:1;
+  min-width:300px;
   background:#fff;
   padding:20px;
   border-radius:8px;
@@ -42,11 +59,6 @@ button{
 }
 .approve{background:#198754}
 .reject{background:#dc3545}
-.logout{
-  background:#000;
-  margin-bottom:15px;
-  width:100%;
-}
 small{color:#555}
 </style>
 </head>
@@ -54,16 +66,16 @@ small{color:#555}
 <div class="container">
 <button class="logout" onclick="logout()">Logout</button>
 
-<div class="card">
-  <h2>Pending Deposits</h2>
-  <div id="depositList">Loading...</div>
-</div>
+<div class="dashboard">
+  <div class="card">
+    <h2>Pending Deposits</h2>
+    <div id="depositList">Loading...</div>
+  </div>
 
-<div class="card">
-  <h2>Pending Withdraws</h2>
-  <div id="withdrawList">Loading...</div>
-</div>
-
+  <div class="card">
+    <h2>Pending Withdraws</h2>
+    <div id="withdrawList">Loading...</div>
+  </div>
 </div>
 
 <script type="module">
