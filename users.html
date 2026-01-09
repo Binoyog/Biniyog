@@ -121,7 +121,7 @@ h2{
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
-import { getFirestore, collection, onSnapshot, doc, getDoc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+import { getFirestore, collection, onSnapshot, doc, getDoc, query, where, addDoc, serverTimestamp, orderBy, limit } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 
 /* Firebase Config */
 const firebaseConfig = {
@@ -181,14 +181,22 @@ async function openModal(uid, userData){
   document.getElementById("modalUserPhone").innerText = userData.phone || "N/A";
   document.getElementById("modalUserBalance").innerText = userData.balance || 0;
 
-  // Fetch Current Plan from user_plans collection
+  // Fetch the latest active plan for the user
   let planName = "None";
   let daysLeft = 0;
 
   try{
-    const planDoc = await getDoc(doc(db,"user_plans",uid));
-    if(planDoc.exists()){
-      const planData = planDoc.data();
+    const plansQuery = query(
+      collection(db,"user_plans"),
+      where("uid","==",uid),
+      orderBy("planEnd","desc"),
+      limit(1)
+    );
+    const plansSnap = await getDoc(plansQuery); // getDoc works only for single doc, use getDocs instead
+    const { getDocs } = await import("https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js");
+    const plansSnapshot = await getDocs(plansQuery);
+    if(!plansSnapshot.empty){
+      const planData = plansSnapshot.docs[0].data();
       planName = planData.planName || "None";
       if(planData.planEnd){
         const end = planData.planEnd.toDate ? planData.planEnd.toDate() : new Date(planData.planEnd);
