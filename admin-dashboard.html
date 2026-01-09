@@ -50,10 +50,10 @@ body{
   flex-wrap: wrap;
 }
 .card{
-  flex: 1;
+  flex:1;
   min-width:300px;
-  display: flex;
-  flex-direction: column;
+  display:flex;
+  flex-direction:column;
   background:#fff;
   padding:20px;
   border-radius:8px;
@@ -65,6 +65,10 @@ body{
 .item{
   border-bottom:1px solid #ddd;
   padding:10px 0;
+  cursor:pointer;
+}
+.item:hover{
+  background:#f0f0f0;
 }
 .row{
   display:flex;
@@ -114,15 +118,17 @@ button{
   font-size:18px;
   color:#dc3545;
 }
+.detail-box{
+  margin-top:10px;
+  border:1px solid #ddd;
+  padding:10px;
+  border-radius:5px;
+  background:#f9f9f9;
+}
 .user-notify{
   display:flex;
   gap:10px;
   margin-top:5px;
-}
-@media (max-width:768px){
-  .dashboard{
-    flex-direction: column;
-  }
 }
 </style>
 </head>
@@ -135,12 +141,10 @@ button{
 
 <div class="container">
   <div class="dashboard">
-    <!-- Deposits -->
     <div class="card">
       <h2>Pending Deposits</h2>
       <div id="depositList">Loading...</div>
     </div>
-    <!-- Withdraws -->
     <div class="card">
       <h2>Pending Withdraws</h2>
       <div id="withdrawList">Loading...</div>
@@ -148,7 +152,7 @@ button{
   </div>
 </div>
 
-<!-- User Modal -->
+<!-- User List Modal -->
 <div class="modal" id="userModal">
   <div class="modal-content">
     <span class="close-btn" id="closeUserModal">×</span>
@@ -157,12 +161,20 @@ button{
   </div>
 </div>
 
+<!-- User Detail Modal -->
+<div class="modal" id="userDetailModal">
+  <div class="modal-content">
+    <span class="close-btn" id="closeDetailModal">×</span>
+    <h2>User Detail</h2>
+    <div id="userDetail"></div>
+  </div>
+</div>
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
-import { getFirestore, doc, getDoc, collection, query, getDocs, updateDoc, addDoc, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, collection, query, onSnapshot, updateDoc, addDoc, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 
-/* Firebase config */
 const firebaseConfig = {
   apiKey: "AIzaSyBFsTzlRPoWHVXEHbKrPdwxslxZGa7Kqfw",
   authDomain: "biniyog-95d00.firebaseapp.com",
@@ -183,165 +195,130 @@ onAuthStateChanged(auth, async(user)=>{
     return;
   }
   const uSnap = await getDoc(doc(db,"users",user.uid));
-  if(!uSnap.exists() || uSnap.data().role !== "admin"){
+  if(!uSnap.exists() || uSnap.data().role!=="admin"){
     alert("Access denied");
     await signOut(auth);
-    location.href = "admin-login.html";
+    location.href="admin-login.html";
     return;
   }
-  loadDeposits();
-  loadWithdraws();
+  loadDepositsRealtime();
+  loadWithdrawsRealtime();
 });
 
-/* ================= LOAD DEPOSITS ================= */
-async function loadDeposits(){
-  depositList.innerHTML = "";
-  const q = query(collection(db,"deposits"));
-  const snap = await getDocs(q);
-  if(snap.empty){
-    depositList.innerHTML = "No pending deposits";
-    return;
-  }
-  for(const d of snap.docs){
-    const x = d.data();
-    const userSnap = await getDoc(doc(db,"users",x.uid));
-    if(!userSnap.exists()) continue;
-    const user = userSnap.data();
-    depositList.innerHTML += `
-      <div class="item">
-        <b>User Phone:</b> ${user.phone || "N/A"}<br>
-        <b>User Balance:</b> ৳${user.balance || 0}<br>
-        <b>Deposit Amount:</b> ৳${x.amount}<br>
-        <b>Deposit Method:</b> ${x.method || "N/A"}<br>
-        <b>Deposit Number:</b> ${x.phone || x.customerPhone || "N/A"}<br>
-        <div class="row">
-          <button class="approve" onclick="approveDeposit('${d.id}')">Approve</button>
-          <button class="reject" onclick="rejectDeposit('${d.id}')">Reject</button>
+/* ================= DEPOSITS ================= */
+function loadDepositsRealtime(){
+  const depositRef = collection(db,"deposits");
+  onSnapshot(depositRef, snapshot=>{
+    depositList.innerHTML="";
+    snapshot.docs.forEach(async d=>{
+      const x = d.data();
+      const userSnap = await getDoc(doc(db,"users",x.uid));
+      const user = userSnap.exists() ? userSnap.data() : {phone:"N/A", balance:0};
+      depositList.innerHTML+=`
+        <div class="item">
+          <b>User Phone:</b> ${user.phone}<br>
+          <b>User Balance:</b> ৳${user.balance}<br>
+          <b>Deposit Amount:</b> ৳${x.amount}<br>
+          <b>Deposit Method:</b> ${x.method || "N/A"}<br>
+          <b>Deposit Number:</b> ${x.phone || x.customerPhone || "N/A"}<br>
         </div>
-      </div>
-    `;
-  }
+      `;
+    });
+  });
 }
 
-/* ================= LOAD WITHDRAWS ================= */
-async function loadWithdraws(){
-  withdrawList.innerHTML = "";
-  const q = query(collection(db,"withdraws"));
-  const snap = await getDocs(q);
-  if(snap.empty){
-    withdrawList.innerHTML = "No pending withdraws";
-    return;
-  }
-  for(const d of snap.docs){
-    const x = d.data();
-    const userSnap = await getDoc(doc(db,"users",x.uid));
-    if(!userSnap.exists()) continue;
-    const user = userSnap.data();
-    withdrawList.innerHTML += `
-      <div class="item">
-        <b>User Phone:</b> ${user.phone || "N/A"}<br>
-        <b>User Balance:</b> ৳${user.balance || 0}<br>
-        <b>Withdraw Amount:</b> ৳${x.amount}<br>
-        <b>Withdraw Method:</b> ${x.method || "N/A"}<br>
-        <b>Withdraw Number:</b> ${x.phone || "N/A"}<br>
-        <div class="row">
-          <button class="approve" onclick="approveWithdraw('${d.id}')">Approve</button>
-          <button class="reject" onclick="rejectWithdraw('${d.id}')">Reject</button>
+/* ================= WITHDRAWS ================= */
+function loadWithdrawsRealtime(){
+  const withdrawRef = collection(db,"withdraws");
+  onSnapshot(withdrawRef, snapshot=>{
+    withdrawList.innerHTML="";
+    snapshot.docs.forEach(async d=>{
+      const x = d.data();
+      const userSnap = await getDoc(doc(db,"users",x.uid));
+      const user = userSnap.exists() ? userSnap.data() : {phone:"N/A", balance:0};
+      withdrawList.innerHTML+=`
+        <div class="item">
+          <b>User Phone:</b> ${user.phone}<br>
+          <b>User Balance:</b> ৳${user.balance}<br>
+          <b>Withdraw Amount:</b> ৳${x.amount}<br>
+          <b>Withdraw Method:</b> ${x.method || "N/A"}<br>
+          <b>Withdraw Number:</b> ${x.phone || "N/A"}<br>
         </div>
-      </div>
-    `;
-  }
+      `;
+    });
+  });
 }
 
 /* ================= USER MODAL ================= */
 const userModal = document.getElementById("userModal");
 const userIcon = document.getElementById("userIcon");
 const closeModalBtn = document.getElementById("closeUserModal");
+const userListDiv = document.getElementById("userList");
+const userDetailModal = document.getElementById("userDetailModal");
+const userDetailDiv = document.getElementById("userDetail");
+const closeDetailBtn = document.getElementById("closeDetailModal");
 
-userIcon.addEventListener("click", openUserModal);
-closeModalBtn.addEventListener("click", ()=> userModal.style.display="none");
-
-async function openUserModal(){
+userIcon.onclick = async()=>{
+  userListDiv.innerHTML="Loading...";
   userModal.style.display="flex";
-  const userListDiv = document.getElementById("userList");
-  userListDiv.innerHTML = "Loading...";
   const q = query(collection(db,"users"));
-  const snap = await getDocs(q);
-  if(snap.empty){
-    userListDiv.innerHTML = "No users found";
-    return;
-  }
-  userListDiv.innerHTML = "";
-  snap.forEach(u=>{
-    const data = u.data();
-    userListDiv.innerHTML += `
-      <div class="item">
-        <b>Phone:</b> ${data.phone || "N/A"}<br>
-        <b>Balance:</b> ৳${data.balance || 0}<br>
-        <div class="user-notify">
-          <input type="text" placeholder="Write notification..." id="notif-${u.id}" style="flex:1;padding:5px;border:1px solid #ddd;border-radius:5px;">
-          <button style="flex:none;background:#198754;color:#fff;border:none;padding:5px 10px;border-radius:5px;cursor:pointer;" onclick="sendNotification('${u.id}')">Send</button>
-        </div>
-      </div>
-    `;
+  onSnapshot(q, snapshot=>{
+    userListDiv.innerHTML="";
+    snapshot.docs.forEach(d=>{
+      const u = d.data();
+      const div = document.createElement("div");
+      div.className="item";
+      div.textContent = `Phone: ${u.phone} | Balance: ৳${u.balance || 0}`;
+      div.onclick = ()=> showUserDetail(d.id);
+      userListDiv.appendChild(div);
+    });
   });
+};
+closeModalBtn.onclick = ()=> userModal.style.display="none";
+closeDetailBtn.onclick = ()=> userDetailModal.style.display="none";
+
+/* ================= USER DETAIL ================= */
+async function showUserDetail(uid){
+  const userSnap = await getDoc(doc(db,"users",uid));
+  if(!userSnap.exists()) return;
+  const user = userSnap.data();
+
+  // Example Plan info
+  let planName = user.plan || "No Plan";
+  let remainingDays = user.planEnd ? Math.ceil((user.planEnd.toDate() - new Date())/(1000*60*60*24)) : 0;
+
+  userDetailDiv.innerHTML=`
+    <div class="detail-box">
+      <b>Phone:</b> ${user.phone}<br>
+      <b>Balance:</b> ৳${user.balance || 0}<br>
+      <b>Plan:</b> ${planName}<br>
+      <b>Remaining Days:</b> ${remainingDays}<br>
+      <div class="user-notify">
+        <input type="text" id="notifyText" placeholder="Write notification" style="flex:1;padding:5px;border-radius:5px;border:1px solid #ccc;">
+        <button onclick="sendNotification('${uid}')">Send</button>
+      </div>
+    </div>
+  `;
+  userDetailModal.style.display="flex";
 }
 
+/* ================= SEND NOTIFICATION ================= */
 async function sendNotification(uid){
-  const input = document.getElementById(`notif-${uid}`);
-  const message = input.value.trim();
-  if(!message) return alert("Please write a notification message");
-  
+  const text = document.getElementById("notifyText").value.trim();
+  if(!text) return alert("Notification cannot be empty");
   await addDoc(collection(db,"notifications"),{
-    uid: uid,
-    message: message,
-    createdAt: serverTimestamp()
+    uid,
+    message:text,
+    createdAt:serverTimestamp()
   });
   alert("Notification sent!");
-  input.value = "";
+  document.getElementById("notifyText").value="";
 }
 
-/* ================= ACTIONS ================= */
-window.approveDeposit = async(id)=>{
-  const ref = doc(db,"deposits",id);
-  const snap = await getDoc(ref);
-  if(!snap.exists()) return;
-  const d = snap.data();
-  await updateDoc(ref,{status:"approved", approvedAt: serverTimestamp()});
-  await updateDoc(doc(db,"users",d.uid),{balance: increment(d.amount)});
-  await addDoc(collection(db,"transactions"),{
-    uid: d.uid, type:"deposit", amount: d.amount, status:"approved", createdAt: serverTimestamp()
-  });
-  loadDeposits();
-};
-
-window.rejectDeposit = async(id)=>{
-  await updateDoc(doc(db,"deposits",id),{status:"rejected"});
-  loadDeposits();
-};
-
-window.approveWithdraw = async(id)=>{
-  const ref = doc(db,"withdraws",id);
-  const snap = await getDoc(ref);
-  if(!snap.exists()) return;
-  const w = snap.data();
-  await updateDoc(ref,{status:"approved", approvedAt: serverTimestamp()});
-  await updateDoc(doc(db,"users",w.uid),{balance: increment(-w.amount)});
-  await addDoc(collection(db,"transactions"),{
-    uid: w.uid, type:"withdraw", amount: w.amount, status:"approved", createdAt: serverTimestamp()
-  });
-  loadWithdraws();
-};
-
-window.rejectWithdraw = async(id)=>{
-  await updateDoc(doc(db,"withdraws",id),{status:"rejected"});
-  loadWithdraws();
-};
-
-window.logout = async()=>{
-  await signOut(auth);
-  location.href = "admin-login.html";
-};
+/* ================= LOGOUT ================= */
+function logout(){
+  signOut(auth).then(()=> location.href="admin-login.html");
+}
 </script>
 </body>
 </html>
