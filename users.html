@@ -5,28 +5,108 @@
 <title>Biniyog | Users</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-  body { margin:0; font-family: Arial, sans-serif; background:#0d1b2a; color:#fff; }
-  .container { max-width:1000px; margin:auto; padding:20px; }
-  h2 { text-align:center; margin-bottom:20px; }
-  .user-list { display:flex; flex-direction:column; gap:10px; }
-  .user-item { background:#1b263b; padding:12px; border-radius:8px; cursor:pointer; transition:0.2s; }
-  .user-item:hover { background:#415a77; }
-  .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); justify-content:center; align-items:center; z-index:1000; }
-  .modal-content { background:#1b263b; padding:20px; border-radius:8px; width:90%; max-width:400px; color:#fff; position:relative; }
-  .modal-content h3{ margin-top:0; }
-  .modal-content textarea{ width:100%; height:80px; margin-top:10px; border-radius:5px; border:none; padding:5px; resize:none; }
-  .modal-content button{ padding:8px 12px; border:none; border-radius:5px; cursor:pointer; margin-top:10px; color:#fff; font-size:14px; }
-  .send-btn{ background:#198754; }
-  .close-btn{ background:#dc3545; margin-left:10px; }
-  .modal-buttons{ display:flex; justify-content:flex-end; }
-  @media(max-width:768px){ .modal-content{ width:95%; } }
+  /* General */
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #0a1f44; /* Dark Blue */
+    color: #fff;
+  }
+  .container {
+    max-width: 1100px;
+    margin: auto;
+    padding: 20px;
+  }
+  h1 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #ffd700;
+  }
+  /* Users List */
+  #userList {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  .user-item {
+    background: #1a2a55;
+    padding: 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .user-item:hover {
+    background: #2a3a75;
+  }
+  .user-item p {
+    margin: 5px 0;
+  }
+
+  /* Modal */
+  .modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left:0;
+    top:0;
+    width:100%;
+    height:100%;
+    background: rgba(0,0,0,0.6);
+    justify-content: center;
+    align-items: center;
+  }
+  .modal-content {
+    background: #1a2a55;
+    padding: 20px;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 400px;
+    position: relative;
+    color: #fff;
+  }
+  .modal-content h3 {
+    margin-top: 0;
+    color: #ffd700;
+  }
+  .modal-content p {
+    margin: 8px 0;
+  }
+  .modal-content textarea {
+    width: 100%;
+    height: 70px;
+    border-radius: 5px;
+    border: none;
+    padding: 8px;
+    resize: none;
+  }
+  .modal-content button {
+    padding: 8px 12px;
+    margin-left: 10px;
+    border:none;
+    border-radius:5px;
+    cursor:pointer;
+    font-weight:bold;
+  }
+  #sendBtn { background: #198754; color:#fff; }
+  #closeBtn { background: #dc3545; color:#fff; }
+
+  /* Responsive */
+  @media(max-width:600px){
+    .modal-content {
+      width: 95%;
+    }
+  }
 </style>
 </head>
 <body>
 
 <div class="container">
-  <h2>Users</h2>
-  <div class="user-list" id="userList">Loading users...</div>
+  <h1>Users</h1>
+  <div id="userList">
+    Loading users...
+  </div>
 </div>
 
 <!-- Modal -->
@@ -38,17 +118,18 @@
     <p><b>Current Plan:</b> <span id="modalUserPlan">None</span></p>
     <p><b>Plan Days Left:</b> <span id="modalPlanDays">0</span></p>
     <textarea id="notificationText" placeholder="Enter message to send"></textarea>
-    <div class="modal-buttons">
-      <button id="sendBtn" class="send-btn">Send</button>
-      <button id="closeBtn" class="close-btn">Close</button>
+    <div style="display:flex; justify-content:flex-end; margin-top:10px;">
+      <button id="sendBtn">Send</button>
+      <button id="closeBtn">Close</button>
     </div>
   </div>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-import { getFirestore, collection, doc, onSnapshot, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+import { getFirestore, collection, getDocs, doc, getDoc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 
+/* Firebase config */
 const firebaseConfig = {
   apiKey: "AIzaSyBFsTzlRPoWHVXEHbKrPdwxslxZGa7Kqfw",
   authDomain: "biniyog-95d00.firebaseapp.com",
@@ -62,58 +143,74 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 const userList = document.getElementById("userList");
-let currentUserId = null;
-
-// Real-time listener
-onSnapshot(collection(db,"users"), snapshot => {
-  userList.innerHTML = "";
-  if(snapshot.empty){
-    userList.innerHTML = "No users found";
-    return;
-  }
-  snapshot.forEach(docSnap=>{
-    const user = docSnap.data();
-    const div = document.createElement("div");
-    div.className = "user-item";
-    div.innerHTML = `<b>${user.name || "No Name"}</b> | ${user.phone || "N/A"} | ৳${user.balance || 0}`;
-    div.addEventListener("click", ()=>openModal(docSnap.id, user));
-    userList.appendChild(div);
-  });
-});
-
-// Modal
 const userModal = document.getElementById("userModal");
 const closeBtn = document.getElementById("closeBtn");
 const sendBtn = document.getElementById("sendBtn");
 
+let currentUserId = null;
+
+// Load Users
+async function loadUsers(){
+  userList.innerHTML = "Loading users...";
+  const usersCol = collection(db,"users");
+  const snap = await getDocs(usersCol);
+  if(snap.empty){
+    userList.innerHTML = "No users found";
+    return;
+  }
+  userList.innerHTML = "";
+  snap.forEach(docSnap=>{
+    const user = docSnap.data();
+    const div = document.createElement("div");
+    div.className = "user-item";
+    div.innerHTML = `<p><b>${user.name || "No Name"}</b></p>
+                     <p>${user.phone || "N/A"}</p>
+                     <p>৳${user.balance || 0}</p>`;
+    div.addEventListener("click", ()=>{
+      openModal(docSnap.id, user);
+    });
+    userList.appendChild(div);
+  });
+}
+
+// Open Modal
 function openModal(uid, userData){
   currentUserId = uid;
   document.getElementById("modalUserName").innerText = userData.name || "No Name";
   document.getElementById("modalUserPhone").innerText = userData.phone || "N/A";
   document.getElementById("modalUserBalance").innerText = userData.balance || 0;
-  document.getElementById("modalUserPlan").innerText = userData.planName || "None";
 
-  let daysLeft = 0;
-  if(userData.planEnd){
-    const end = userData.planEnd.toDate ? userData.planEnd.toDate() : new Date(userData.planEnd);
-    const now = new Date();
-    daysLeft = Math.ceil((end - now)/(1000*60*60*24));
-    if(daysLeft < 0) daysLeft = 0;
-  }
-  document.getElementById("modalPlanDays").innerText = daysLeft;
+  // Fetch plan info
+  const userRef = doc(db,"users",uid);
+  getDoc(userRef).then(docSnap=>{
+    if(docSnap.exists()){
+      const data = docSnap.data();
+      const planName = data.planName || "None";
+      let daysLeft = 0;
+      if(data.planEnd){
+        const end = data.planEnd.toDate ? data.planEnd.toDate() : new Date(data.planEnd);
+        const now = new Date();
+        daysLeft = Math.ceil((end - now)/(1000*60*60*24));
+        if(daysLeft < 0) daysLeft = 0;
+      }
+      document.getElementById("modalUserPlan").innerText = planName;
+      document.getElementById("modalPlanDays").innerText = daysLeft;
+    }
+  });
+
   document.getElementById("notificationText").value = "";
   userModal.style.display = "flex";
 }
 
 // Close modal
-closeBtn.addEventListener("click", ()=> userModal.style.display="none");
-window.addEventListener("click", e=>{ if(e.target==userModal) userModal.style.display="none"; });
+closeBtn.addEventListener("click", ()=>{ userModal.style.display = "none"; });
+window.addEventListener("click",(e)=>{ if(e.target==userModal) userModal.style.display="none"; });
 
 // Send notification
 sendBtn.addEventListener("click", async ()=>{
   const msg = document.getElementById("notificationText").value.trim();
-  if(!msg) return alert("Enter a message");
-  if(!currentUserId) return alert("User not selected");
+  if(!msg){ alert("Enter a message"); return; }
+  if(!currentUserId){ alert("User not selected"); return; }
   await addDoc(collection(db,"notifications"),{
     uid: currentUserId,
     message: msg,
@@ -122,6 +219,9 @@ sendBtn.addEventListener("click", async ()=>{
   alert("Notification sent!");
   userModal.style.display = "none";
 });
+
+// Initialize
+loadUsers();
 </script>
 </body>
 </html>
