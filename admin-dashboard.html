@@ -28,11 +28,11 @@ body{
 .dashboard{
   display:flex;
   gap:20px;
-  flex-wrap: nowrap; /* কখনো stacked হবে না */
-  align-items: stretch; /* কার্ডের উচ্চতা সমান হবে */
+  flex-wrap: wrap; /* ছোট স্ক্রিনে stacked হবে */
 }
 .card{
   flex: 1;
+  min-width:300px;
   display: flex;
   flex-direction: column;
   background:#fff;
@@ -65,6 +65,11 @@ button{
 #depositList, #withdrawList{
   overflow-y:auto;
   max-height:600px;
+}
+@media (max-width:768px){
+  .dashboard{
+    flex-direction: column;
+  }
 }
 </style>
 </head>
