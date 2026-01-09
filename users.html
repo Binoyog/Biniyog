@@ -5,108 +5,28 @@
 <title>Biniyog | Users</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-  body {
-    margin:0;
-    font-family: Arial, sans-serif;
-    background:#0d1b2a; /* Dark blue */
-    color:#fff;
-  }
-
-  .container{
-    max-width:1000px;
-    margin:auto;
-    padding:20px;
-  }
-
-  h2{
-    text-align:center;
-    margin-bottom:20px;
-  }
-
-  .user-list{
-    display:flex;
-    flex-direction:column;
-    gap:10px;
-  }
-
-  .user-item{
-    background:#1b263b;
-    padding:12px;
-    border-radius:8px;
-    cursor:pointer;
-    transition:0.2s;
-  }
-
-  .user-item:hover{
-    background:#415a77;
-  }
-
-  /* Modal */
-  .modal{
-    display:none;
-    position:fixed;
-    top:0; left:0;
-    width:100%; height:100%;
-    background:rgba(0,0,0,0.6);
-    justify-content:center;
-    align-items:center;
-    z-index:1000;
-  }
-
-  .modal-content{
-    background:#1b263b;
-    padding:20px;
-    border-radius:8px;
-    width:90%;
-    max-width:400px;
-    color:#fff;
-    position:relative;
-  }
-
-  .modal-content h3{
-    margin-top:0;
-  }
-
-  .modal-content textarea{
-    width:100%;
-    height:80px;
-    margin-top:10px;
-    border-radius:5px;
-    border:none;
-    padding:5px;
-    resize:none;
-  }
-
-  .modal-content button{
-    padding:8px 12px;
-    border:none;
-    border-radius:5px;
-    cursor:pointer;
-    margin-top:10px;
-    color:#fff;
-    font-size:14px;
-  }
-
+  body { margin:0; font-family: Arial, sans-serif; background:#0d1b2a; color:#fff; }
+  .container { max-width:1000px; margin:auto; padding:20px; }
+  h2 { text-align:center; margin-bottom:20px; }
+  .user-list { display:flex; flex-direction:column; gap:10px; }
+  .user-item { background:#1b263b; padding:12px; border-radius:8px; cursor:pointer; transition:0.2s; }
+  .user-item:hover { background:#415a77; }
+  .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); justify-content:center; align-items:center; z-index:1000; }
+  .modal-content { background:#1b263b; padding:20px; border-radius:8px; width:90%; max-width:400px; color:#fff; position:relative; }
+  .modal-content h3{ margin-top:0; }
+  .modal-content textarea{ width:100%; height:80px; margin-top:10px; border-radius:5px; border:none; padding:5px; resize:none; }
+  .modal-content button{ padding:8px 12px; border:none; border-radius:5px; cursor:pointer; margin-top:10px; color:#fff; font-size:14px; }
   .send-btn{ background:#198754; }
   .close-btn{ background:#dc3545; margin-left:10px; }
-
-  .modal-buttons{
-    display:flex;
-    justify-content:flex-end;
-  }
-
-  @media(max-width:768px){
-    .modal-content{ width:95%; }
-  }
+  .modal-buttons{ display:flex; justify-content:flex-end; }
+  @media(max-width:768px){ .modal-content{ width:95%; } }
 </style>
 </head>
 <body>
 
 <div class="container">
   <h2>Users</h2>
-  <div class="user-list" id="userList">
-    Loading users...
-  </div>
+  <div class="user-list" id="userList">Loading users...</div>
 </div>
 
 <!-- Modal -->
@@ -127,9 +47,8 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-import { getFirestore, collection, doc, addDoc, serverTimestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+import { getFirestore, collection, doc, onSnapshot, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 
-/* Firebase config */
 const firebaseConfig = {
   apiKey: "AIzaSyBFsTzlRPoWHVXEHbKrPdwxslxZGa7Kqfw",
   authDomain: "biniyog-95d00.firebaseapp.com",
@@ -145,8 +64,8 @@ const db = getFirestore(app);
 const userList = document.getElementById("userList");
 let currentUserId = null;
 
-// Real-time listener for users collection
-onSnapshot(collection(db,"users"), (snapshot)=>{
+// Real-time listener
+onSnapshot(collection(db,"users"), snapshot => {
   userList.innerHTML = "";
   if(snapshot.empty){
     userList.innerHTML = "No users found";
@@ -162,47 +81,39 @@ onSnapshot(collection(db,"users"), (snapshot)=>{
   });
 });
 
-// Modal elements
+// Modal
 const userModal = document.getElementById("userModal");
 const closeBtn = document.getElementById("closeBtn");
 const sendBtn = document.getElementById("sendBtn");
 
-// Open modal
-async function openModal(uid, userData){
+function openModal(uid, userData){
   currentUserId = uid;
   document.getElementById("modalUserName").innerText = userData.name || "No Name";
   document.getElementById("modalUserPhone").innerText = userData.phone || "N/A";
   document.getElementById("modalUserBalance").innerText = userData.balance || 0;
+  document.getElementById("modalUserPlan").innerText = userData.planName || "None";
 
-  // Fetch latest plan info
-  const userDocRef = doc(db,"users",uid);
-  const docSnap = await userDocRef.get ? await userDocRef.get() : await doc(userDocRef);
-  const data = userData; // fallback if docSnap unavailable
-  const planName = data.planName || "None";
   let daysLeft = 0;
-  if(data.planEnd){
-    const end = data.planEnd.toDate ? data.planEnd.toDate() : new Date(data.planEnd);
+  if(userData.planEnd){
+    const end = userData.planEnd.toDate ? userData.planEnd.toDate() : new Date(userData.planEnd);
     const now = new Date();
     daysLeft = Math.ceil((end - now)/(1000*60*60*24));
     if(daysLeft < 0) daysLeft = 0;
   }
-  document.getElementById("modalUserPlan").innerText = planName;
   document.getElementById("modalPlanDays").innerText = daysLeft;
-
   document.getElementById("notificationText").value = "";
   userModal.style.display = "flex";
 }
 
 // Close modal
-closeBtn.addEventListener("click", ()=>{ userModal.style.display = "none"; });
-window.addEventListener("click", (e)=>{ if(e.target==userModal) userModal.style.display="none"; });
+closeBtn.addEventListener("click", ()=> userModal.style.display="none");
+window.addEventListener("click", e=>{ if(e.target==userModal) userModal.style.display="none"; });
 
 // Send notification
 sendBtn.addEventListener("click", async ()=>{
   const msg = document.getElementById("notificationText").value.trim();
   if(!msg) return alert("Enter a message");
   if(!currentUserId) return alert("User not selected");
-
   await addDoc(collection(db,"notifications"),{
     uid: currentUserId,
     message: msg,
