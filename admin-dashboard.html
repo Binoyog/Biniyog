@@ -5,39 +5,41 @@
 <title>Biniyog | Admin Dashboard</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
+/* ================= Body ================= */
 body{
   margin:0;
   font-family: Arial, sans-serif;
-  background:#f2f4f7;
+  background:#0b1a33; /* Dark Blue Background */
+  color:#fff;
 }
 
-/* Header */
+/* ================= Header ================= */
 .header{
   display:flex;
   justify-content:flex-end;
   align-items:center;
   padding:10px 20px;
-  background:#198754; /* প্রিমিয়াম কালার */
-  box-shadow:0 2px 8px rgba(0,0,0,.1);
+  background:#0b1a33; /* Dark Blue same as body */
+  box-shadow:0 2px 10px rgba(0,0,0,.5);
 }
 
-/* User Icon */
+/* ================= User Icon ================= */
 .user-icon{
-  width:60px;
-  height:60px;
-  background:#ffc107; /* অ্যাকসেন্ট কালার */
+  width:50px;
+  height:50px;
+  background:#ffc107; /* Accent color */
   color:#000;
   border-radius:50%;
   display:flex;
   justify-content:center;
   align-items:center;
   font-weight:bold;
-  font-size:24px;
+  font-size:22px;
   cursor:pointer;
   margin-left:15px;
 }
 
-/* Logout Button */
+/* ================= Logout Button ================= */
 .logout{
   background:#dc3545;
   color:#fff;
@@ -49,39 +51,41 @@ body{
   margin-right:10px;
 }
 
-/* Container */
+/* ================= Container ================= */
 .container{
   max-width:1200px;
   margin:auto;
   padding:20px;
 }
 
-/* Dashboard Cards */
+/* ================= Dashboard Cards ================= */
 .dashboard{
   display:flex;
   gap:20px;
-  flex-wrap:wrap; /* Desktop-এ পাশাপাশি, Mobile-এ stacked */
+  flex-wrap:wrap;
 }
 .card{
   flex:1;
   min-width:300px;
-  background:#fff;
+  background:#1a2a4d; /* Dark Card */
   padding:15px;
   border-radius:8px;
-  box-shadow:0 2px 8px rgba(0,0,0,.1);
+  box-shadow:0 2px 10px rgba(0,0,0,.6);
   font-size:14px;
   display:flex;
   flex-direction:column;
   max-height:calc(100vh - 150px);
   overflow-y:auto;
+  color:#fff;
 }
 .card h2{
   margin-top:0;
   font-size:16px;
   margin-bottom:10px;
+  color:#ffc107; /* Accent header */
 }
 .item{
-  border-bottom:1px solid #ddd;
+  border-bottom:1px solid #3a4a6f;
   padding:5px 0;
 }
 .row{
@@ -101,7 +105,7 @@ button{
 .approve{background:#198754}
 .reject{background:#dc3545}
 
-/* Mobile stacked */
+/* ================= Mobile Responsive ================= */
 @media(max-width:768px){
   .dashboard{
     flex-direction:column;
@@ -110,7 +114,6 @@ button{
     max-height:none;
   }
 }
-
 </style>
 </head>
 <body>
@@ -138,7 +141,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebas
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 import { getFirestore, doc, getDoc, collection, query, where, getDocs, updateDoc, addDoc, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 
-/* Firebase config */
+/* Firebase Config */
 const firebaseConfig = {
   apiKey: "AIzaSyBFsTzlRPoWHVXEHbKrPdwxslxZGa7Kqfw",
   authDomain: "biniyog-95d00.firebaseapp.com",
@@ -274,17 +277,15 @@ window.rejectWithdraw = async(id)=>{
   loadWithdraws();
 };
 
-/* LOGOUT */
+/* ================= LOGOUT ================= */
 window.logout = async()=>{
   await signOut(auth);
   location.href = "admin-login.html";
 };
 
-/* OPEN USERS PAGE */
-const userIcon = document.getElementById("userIcon");
-userIcon.addEventListener("click", ()=>{
-  console.log("Opening users.html");
-  window.location.href = "users.html"; // অবশ্যই একই folder-এ থাকা লাগবে
+/* ================= OPEN USERS PAGE ================= */
+document.getElementById("userIcon").addEventListener("click", ()=>{
+  window.location.href = "users.html"; // একই folder-এ থাকতে হবে
 });
 </script>
 </body>
