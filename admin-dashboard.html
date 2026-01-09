@@ -5,15 +5,12 @@
 <title>Biniyog | Admin Dashboard</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-/* ================= Body ================= */
 body{
   margin:0;
   font-family: Arial, sans-serif;
   background:#f5f6fa;
   color:#18f2c2;
 }
-
-/* ================= Header ================= */
 .header{
   display:flex;
   justify-content:flex-end;
@@ -22,8 +19,6 @@ body{
   background:#0b1a33;
   box-shadow:0 2px 10px rgba(0,0,0,.5);
 }
-
-/* ================= User Icon ================= */
 .user-icon{
   width:50px;
   height:50px;
@@ -38,8 +33,6 @@ body{
   cursor:pointer;
   margin-left:15px;
 }
-
-/* ================= Logout Button ================= */
 .logout{
   background:#18f2c2;
   color:#fff;
@@ -50,15 +43,11 @@ body{
   font-size:14px;
   margin-right:10px;
 }
-
-/* ================= Container ================= */
 .container{
   max-width:1200px;
   margin:auto;
   padding:20px;
 }
-
-/* ================= Dashboard Cards ================= */
 .dashboard{
   display:flex;
   gap:20px;
@@ -86,7 +75,7 @@ body{
 }
 .item{
   border-bottom:1px solid #3a4a6f;
-  padding:5px 0;
+  padding:8px 0;
 }
 .row{
   display:flex;
@@ -95,7 +84,7 @@ body{
 }
 button{
   flex:1;
-  padding:5px;
+  padding:6px;
   border:none;
   border-radius:5px;
   cursor:pointer;
@@ -104,15 +93,9 @@ button{
 }
 .approve{background:#198754}
 .reject{background:#dc3545}
-
-/* ================= Mobile Responsive ================= */
 @media(max-width:768px){
-  .dashboard{
-    flex-direction:column;
-  }
-  .card{
-    max-height:none;
-  }
+  .dashboard{flex-direction:column;}
+  .card{max-height:none;}
 }
 </style>
 </head>
@@ -130,6 +113,7 @@ button{
       <div id="depositList">Loading...</div>
       <p><b>Total Pending Deposits:</b> <span id="depositNumber">0</span></p>
     </div>
+
     <div class="card">
       <h2>Pending Withdraws</h2>
       <div id="withdrawList">Loading...</div>
@@ -143,7 +127,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebas
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 import { getFirestore, doc, getDoc, collection, query, where, getDocs, updateDoc, addDoc, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 
-/* Firebase Config */
 const firebaseConfig = {
   apiKey: "AIzaSyBFsTzlRPoWHVXEHbKrPdwxslxZGa7Kqfw",
   authDomain: "biniyog-95d00.firebaseapp.com",
@@ -157,7 +140,7 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-/* ================= AUTH CHECK ================= */
+/* AUTH CHECK */
 onAuthStateChanged(auth, async(user)=>{
   if(!user){
     location.href = "admin-login.html";
@@ -174,28 +157,32 @@ onAuthStateChanged(auth, async(user)=>{
   loadWithdraws();
 });
 
-/* ================= LOAD DEPOSITS ================= */
+/* LOAD DEPOSITS */
 async function loadDeposits(){
   const depositList = document.getElementById("depositList");
   depositList.innerHTML = "";
   const q = query(collection(db,"deposits"), where("status","==","pending"));
   const snap = await getDocs(q);
-  document.getElementById("depositNumber").innerText = snap.size; // New: deposit number
+  document.getElementById("depositNumber").innerText = snap.size;
+
   if(snap.empty){
     depositList.innerHTML = "No pending deposits";
     return;
   }
+
   for(const d of snap.docs){
     const x = d.data();
     const userSnap = await getDoc(doc(db,"users",x.uid));
     if(!userSnap.exists()) continue;
     const user = userSnap.data();
+
     depositList.innerHTML += `
       <div class="item">
         <b>User Phone:</b> ${user.phone || "N/A"}<br>
         <b>User Balance:</b> ৳${user.balance || 0}<br>
         <b>Deposit Amount:</b> ৳${x.amount}<br>
         <b>Deposit Method:</b> ${x.method || "N/A"}<br>
+        <b>Deposit Submitted Phone:</b> ${x.customerPhone || "N/A"}<br>
         <div class="row">
           <button class="approve" onclick="approveDeposit('${d.id}')">Approve</button>
           <button class="reject" onclick="rejectDeposit('${d.id}')">Reject</button>
@@ -205,22 +192,25 @@ async function loadDeposits(){
   }
 }
 
-/* ================= LOAD WITHDRAWS ================= */
+/* LOAD WITHDRAWS */
 async function loadWithdraws(){
   const withdrawList = document.getElementById("withdrawList");
   withdrawList.innerHTML = "";
   const q = query(collection(db,"withdraws"), where("status","==","pending"));
   const snap = await getDocs(q);
-  document.getElementById("withdrawNumber").innerText = snap.size; // New: withdraw number
+  document.getElementById("withdrawNumber").innerText = snap.size;
+
   if(snap.empty){
     withdrawList.innerHTML = "No pending withdraws";
     return;
   }
+
   for(const d of snap.docs){
     const x = d.data();
     const userSnap = await getDoc(doc(db,"users",x.uid));
     if(!userSnap.exists()) continue;
     const user = userSnap.data();
+
     withdrawList.innerHTML += `
       <div class="item">
         <b>User Phone:</b> ${user.phone || "N/A"}<br>
@@ -236,20 +226,21 @@ async function loadWithdraws(){
   }
 }
 
-/* ================= ACTIONS ================= */
+/* ACTIONS */
 window.approveDeposit = async(id)=>{
   const ref = doc(db,"deposits",id);
   const snap = await getDoc(ref);
   if(!snap.exists()) return;
   const d = snap.data();
+
   await updateDoc(ref,{status:"approved", approvedAt: serverTimestamp()});
   await updateDoc(doc(db,"users",d.uid),{balance: increment(d.amount)});
   await addDoc(collection(db,"transactions"),{
-    uid: d.uid,
+    uid:d.uid,
     type:"deposit",
-    amount: d.amount,
+    amount:d.amount,
     status:"approved",
-    createdAt: serverTimestamp()
+    createdAt:serverTimestamp()
   });
   loadDeposits();
 };
@@ -264,14 +255,15 @@ window.approveWithdraw = async(id)=>{
   const snap = await getDoc(ref);
   if(!snap.exists()) return;
   const w = snap.data();
+
   await updateDoc(ref,{status:"approved", approvedAt: serverTimestamp()});
   await updateDoc(doc(db,"users",w.uid),{balance: increment(-w.amount)});
   await addDoc(collection(db,"transactions"),{
-    uid: w.uid,
+    uid:w.uid,
     type:"withdraw",
-    amount: w.amount,
+    amount:w.amount,
     status:"approved",
-    createdAt: serverTimestamp()
+    createdAt:serverTimestamp()
   });
   loadWithdraws();
 };
@@ -281,16 +273,14 @@ window.rejectWithdraw = async(id)=>{
   loadWithdraws();
 };
 
-/* ================= LOGOUT ================= */
 window.logout = async()=>{
   await signOut(auth);
   location.href = "admin-login.html";
 };
 
-/* ================= OPEN USERS PAGE ================= */
-document.getElementById("userIcon").addEventListener("click", ()=>{
-  window.location.href = "users.html";
-});
+document.getElementById("userIcon").onclick = ()=>{
+  location.href = "users.html";
+};
 </script>
 </body>
 </html>
