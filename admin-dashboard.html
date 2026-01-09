@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <title>Biniyog | Admin Dashboard</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <style>
 body{
   margin:0;
@@ -51,11 +50,8 @@ button{
 small{color:#555}
 </style>
 </head>
-
 <body>
-
 <div class="container">
-
 <button class="logout" onclick="logout()">Logout</button>
 
 <div class="card">
@@ -111,7 +107,6 @@ onAuthStateChanged(auth, async(user)=>{
     location.href = "admin-login.html";
     return;
   }
-
   const uSnap = await getDoc(doc(db,"users",user.uid));
   if(!uSnap.exists() || uSnap.data().role !== "admin"){
     alert("Access denied");
@@ -119,7 +114,6 @@ onAuthStateChanged(auth, async(user)=>{
     location.href = "admin-login.html";
     return;
   }
-
   loadDeposits();
   loadWithdraws();
 });
@@ -129,20 +123,15 @@ async function loadDeposits(){
   depositList.innerHTML = "";
   const q = query(collection(db,"deposits"), where("status","==","pending"));
   const snap = await getDocs(q);
-
   if(snap.empty){
     depositList.innerHTML = "No pending deposits";
     return;
   }
-
   for(const d of snap.docs){
     const x = d.data();
-
     const userSnap = await getDoc(doc(db,"users",x.uid));
     if(!userSnap.exists()) continue;
-
     const user = userSnap.data();
-
     depositList.innerHTML += `
       <div class="item">
         <b>মোবাইল:</b> ${user.phone}<br>
@@ -163,25 +152,21 @@ async function loadWithdraws(){
   withdrawList.innerHTML = "";
   const q = query(collection(db,"withdraws"), where("status","==","pending"));
   const snap = await getDocs(q);
-
   if(snap.empty){
     withdrawList.innerHTML = "No pending withdraws";
     return;
   }
-
   for(const d of snap.docs){
     const x = d.data();
-
     const userSnap = await getDoc(doc(db,"users",x.uid));
     if(!userSnap.exists()) continue;
-
     const user = userSnap.data();
-
     withdrawList.innerHTML += `
       <div class="item">
         <b>মোবাইল:</b> ${user.phone}<br>
         <b>রিয়েল ব্যালেন্স:</b> ৳${user.balance}<br>
         <b>Withdraw Amount:</b> ৳${x.amount}<br>
+        <b>Withdraw Number:</b> ${user.phone}<br>
         <b>Method:</b> ${x.method || ""}<br>
         <div class="row">
           <button class="approve" onclick="approveWithdraw('${d.id}')">Approve</button>
@@ -197,20 +182,21 @@ window.approveDeposit = async(id)=>{
   const ref = doc(db,"deposits",id);
   const snap = await getDoc(ref);
   if(!snap.exists()) return;
-
   const d = snap.data();
-
-  await updateDoc(ref,{status:"approved",approvedAt:serverTimestamp()});
-  await updateDoc(doc(db,"users",d.uid),{balance:increment(d.amount)});
-
+  await updateDoc(ref,{
+    status:"approved",
+    approvedAt: serverTimestamp()
+  });
+  await updateDoc(doc(db,"users",d.uid),{
+    balance: increment(d.amount)
+  });
   await addDoc(collection(db,"transactions"),{
-    uid:d.uid,
+    uid: d.uid,
     type:"deposit",
     amount:d.amount,
     status:"approved",
-    createdAt:serverTimestamp()
+    createdAt: serverTimestamp()
   });
-
   loadDeposits();
 };
 
@@ -223,20 +209,21 @@ window.approveWithdraw = async(id)=>{
   const ref = doc(db,"withdraws",id);
   const snap = await getDoc(ref);
   if(!snap.exists()) return;
-
   const w = snap.data();
-
-  await updateDoc(ref,{status:"approved",approvedAt:serverTimestamp()});
-  await updateDoc(doc(db,"users",w.uid),{balance:increment(-w.amount)});
-
+  await updateDoc(ref,{
+    status:"approved",
+    approvedAt: serverTimestamp()
+  });
+  await updateDoc(doc(db,"users",w.uid),{
+    balance: increment(-w.amount)
+  });
   await addDoc(collection(db,"transactions"),{
-    uid:w.uid,
+    uid: w.uid,
     type:"withdraw",
     amount:w.amount,
     status:"approved",
-    createdAt:serverTimestamp()
+    createdAt: serverTimestamp()
   });
-
   loadWithdraws();
 };
 
@@ -250,6 +237,5 @@ window.logout = async()=>{
   location.href = "admin-login.html";
 };
 </script>
-
 </body>
 </html>
