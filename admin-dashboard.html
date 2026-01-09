@@ -49,7 +49,7 @@ body{
 .dashboard{
   display:flex;
   gap:20px;
-  flex-wrap:wrap;
+  flex-wrap:wrap; /* Desktop-এ পাশে থাকবে, Mobile-এ stacked হবে */
 }
 .card{
   flex:1;
@@ -85,11 +85,10 @@ button{
 .approve{background:#198754}
 .reject{background:#dc3545}
 
-/* Desktop ও Mobile view পাশাপাশি */
-@media(max-width:1200px){
+/* Mobile view stacked */
+@media(max-width:768px){
   .dashboard{
-    flex-wrap:nowrap;
-    overflow-x:auto;
+    flex-direction:column; /* Mobile-এ stacked */
   }
 }
 #depositList, #withdrawList{
@@ -171,11 +170,11 @@ async function loadDeposits(){
     const user = userSnap.data();
     depositList.innerHTML += `
       <div class="item">
-        <b>Phone:</b> ${user.phone || "N/A"} |
-        <b>Balance:</b> ৳${user.balance || 0} |
-        <b>Amount:</b> ৳${x.amount} |
-        <b>Method:</b> ${x.method || "N/A"} |
-        <b>Deposit No:</b> ${x.phone || x.customerPhone || "N/A"} 
+        <b>User Phone:</b> ${user.phone || "N/A"}<br>
+        <b>User Balance:</b> ৳${user.balance || 0}<br>
+        <b>Deposit Amount:</b> ৳${x.amount}<br>
+        <b>Deposit Method:</b> ${x.method || "N/A"}<br>
+        <b>Deposit Number:</b> ${x.phone || x.customerPhone || "N/A"}<br>
         <div class="row">
           <button class="approve" onclick="approveDeposit('${d.id}')">Approve</button>
           <button class="reject" onclick="rejectDeposit('${d.id}')">Reject</button>
@@ -202,11 +201,11 @@ async function loadWithdraws(){
     const user = userSnap.data();
     withdrawList.innerHTML += `
       <div class="item">
-        <b>Phone:</b> ${user.phone || "N/A"} |
-        <b>Balance:</b> ৳${user.balance || 0} |
-        <b>Amount:</b> ৳${x.amount} |
-        <b>Method:</b> ${x.method || "N/A"} |
-        <b>Withdraw No:</b> ${x.phone || "N/A"} 
+        <b>User Phone:</b> ${user.phone || "N/A"}<br>
+        <b>User Balance:</b> ৳${user.balance || 0}<br>
+        <b>Withdraw Amount:</b> ৳${x.amount}<br>
+        <b>Withdraw Method:</b> ${x.method || "N/A"}<br>
+        <b>Withdraw Number:</b> ${x.phone || "N/A"}<br>
         <div class="row">
           <button class="approve" onclick="approveWithdraw('${d.id}')">Approve</button>
           <button class="reject" onclick="rejectWithdraw('${d.id}')">Reject</button>
@@ -268,7 +267,8 @@ window.logout = async()=>{
 
 /* ================= OPEN USER PAGE ================= */
 function openUserPage(){
-  window.location.href = "users.html"; // নতুন পেজ খুলবে
+  // নতুন পেজ খুলবে, তুমি পরে create করবে
+  window.location.href = "users.html";
 }
 </script>
 </body>
