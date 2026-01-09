@@ -117,7 +117,7 @@ button{
 
 <div class="header">
   <button class="logout" onclick="logout()">Logout</button>
-  <div class="user-icon" id="userIcon" onclick="openUserPage()">U</div>
+  <div class="user-icon" id="userIcon">U</div>
 </div>
 
 <div class="container">
@@ -152,7 +152,7 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-/* AUTH CHECK */
+/* ================= AUTH CHECK ================= */
 onAuthStateChanged(auth, async(user)=>{
   if(!user){
     location.href = "admin-login.html";
@@ -169,7 +169,7 @@ onAuthStateChanged(auth, async(user)=>{
   loadWithdraws();
 });
 
-/* LOAD DEPOSITS */
+/* ================= LOAD DEPOSITS ================= */
 async function loadDeposits(){
   const depositList = document.getElementById("depositList");
   depositList.innerHTML = "";
@@ -190,7 +190,6 @@ async function loadDeposits(){
         <b>User Balance:</b> ৳${user.balance || 0}<br>
         <b>Deposit Amount:</b> ৳${x.amount}<br>
         <b>Deposit Method:</b> ${x.method || "N/A"}<br>
-        <b>Deposit Number:</b> ${x.phone || x.customerPhone || "N/A"}<br>
         <div class="row">
           <button class="approve" onclick="approveDeposit('${d.id}')">Approve</button>
           <button class="reject" onclick="rejectDeposit('${d.id}')">Reject</button>
@@ -200,7 +199,7 @@ async function loadDeposits(){
   }
 }
 
-/* LOAD WITHDRAWS */
+/* ================= LOAD WITHDRAWS ================= */
 async function loadWithdraws(){
   const withdrawList = document.getElementById("withdrawList");
   withdrawList.innerHTML = "";
@@ -221,7 +220,6 @@ async function loadWithdraws(){
         <b>User Balance:</b> ৳${user.balance || 0}<br>
         <b>Withdraw Amount:</b> ৳${x.amount}<br>
         <b>Withdraw Method:</b> ${x.method || "N/A"}<br>
-        <b>Withdraw Number:</b> ${x.phone || "N/A"}<br>
         <div class="row">
           <button class="approve" onclick="approveWithdraw('${d.id}')">Approve</button>
           <button class="reject" onclick="rejectWithdraw('${d.id}')">Reject</button>
@@ -231,7 +229,7 @@ async function loadWithdraws(){
   }
 }
 
-/* ACTIONS */
+/* ================= ACTIONS ================= */
 window.approveDeposit = async(id)=>{
   const ref = doc(db,"deposits",id);
   const snap = await getDoc(ref);
@@ -283,10 +281,11 @@ window.logout = async()=>{
 };
 
 /* OPEN USERS PAGE */
-function openUserPage(){
-  // নিশ্চিতভাবে একই folder-এ users.html থাকতে হবে
-  window.location.href = "users.html";
-}
+const userIcon = document.getElementById("userIcon");
+userIcon.addEventListener("click", ()=>{
+  console.log("Opening users.html");
+  window.location.href = "users.html"; // অবশ্যই একই folder-এ থাকা লাগবে
+});
 </script>
 </body>
 </html>
