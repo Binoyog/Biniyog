@@ -13,44 +13,6 @@ body{
   color:#fff;
 }
 
-/* ================= Header ================= */
-.header{
-  display:flex;
-  justify-content:flex-end;
-  align-items:center;
-  padding:10px 20px;
-  background:#0b1a33;
-  box-shadow:0 2px 10px rgba(0,0,0,.5);
-}
-
-/* ================= User Icon ================= */
-.user-icon{
-  width:50px;
-  height:50px;
-  background:#ffc107; /* Accent color */
-  color:#000;
-  border-radius:50%;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  font-weight:bold;
-  font-size:22px;
-  cursor:pointer;
-  margin-left:15px;
-}
-
-/* ================= Logout Button ================= */
-.logout{
-  background:#dc3545;
-  color:#fff;
-  border:none;
-  padding:8px 12px;
-  border-radius:5px;
-  cursor:pointer;
-  font-size:14px;
-  margin-right:10px;
-}
-
 /* ================= Container ================= */
 .container{
   max-width:1200px;
@@ -59,6 +21,10 @@ body{
 }
 
 /* ================= Users Table/Card ================= */
+h2{
+  color:#ffc107;
+  margin-bottom:20px;
+}
 .user-list{
   display:flex;
   flex-direction:column;
@@ -108,7 +74,7 @@ body{
 .modal-content p{
   margin:5px 0;
 }
-.modal-content input, .modal-content textarea{
+.modal-content textarea{
   width:100%;
   padding:8px;
   margin:5px 0 10px 0;
@@ -131,14 +97,9 @@ body{
 </head>
 <body>
 
-<div class="header">
-  <button class="logout" onclick="logout()">Logout</button>
-  <div class="user-icon" id="userIcon">U</div>
-</div>
-
 <div class="container">
   <h2>All Users</h2>
-  <div class="user-list" id="userList">Loading...</div>
+  <div class="user-list" id="userList">Loading users...</div>
 </div>
 
 <!-- Modal -->
@@ -151,8 +112,8 @@ body{
     <p><b>Plan Days Left:</b> <span id="modalPlanDays">0</span></p>
     <textarea id="notificationText" placeholder="Enter message to send"></textarea>
     <div style="display:flex; justify-content:flex-end; gap:10px;">
-      <button onclick="sendNotification()">Send</button>
-      <button class="close-btn" onclick="closeModal()">Close</button>
+      <button id="sendBtn">Send</button>
+      <button id="closeBtn" class="close-btn">Close</button>
     </div>
   </div>
 </div>
@@ -160,7 +121,7 @@ body{
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
-import { getFirestore, collection, getDocs, doc, getDoc, addDoc, serverTimestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+import { getFirestore, collection, onSnapshot, doc, getDoc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 
 /* Firebase Config */
 const firebaseConfig = {
@@ -175,6 +136,8 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+
+let currentUserId = null;
 
 /* Auth Check */
 onAuthStateChanged(auth, async(user)=>{
@@ -192,10 +155,9 @@ onAuthStateChanged(auth, async(user)=>{
   loadUsersRealtime();
 });
 
-/* Load Users with Realtime Balance */
+/* Load Users Realtime */
 function loadUsersRealtime(){
   const list = document.getElementById("userList");
-  list.innerHTML = "";
   const usersCol = collection(db,"users");
   onSnapshot(usersCol, snap=>{
     list.innerHTML = "";
@@ -208,19 +170,19 @@ function loadUsersRealtime(){
       card.onclick = ()=>openModal(docSnap.id, u);
       list.appendChild(card);
     });
+    if(list.innerHTML === "") list.innerHTML = "No users found.";
   });
 }
 
-/* Modal Logic */
-let currentUserId = null;
+/* Modal Functions */
 function openModal(uid, userData){
   currentUserId = uid;
   document.getElementById("modalUserName").innerText = userData.name || "No Name";
   document.getElementById("modalUserPhone").innerText = userData.phone || "N/A";
   document.getElementById("modalUserBalance").innerText = userData.balance || 0;
-  
+
   // Current Plan
-  let planName = userData.planName || "None";
+  const planName = userData.planName || "None";
   let daysLeft = 0;
   if(userData.planEnd){
     const end = userData.planEnd.toDate ? userData.planEnd.toDate() : new Date(userData.planEnd);
@@ -230,20 +192,23 @@ function openModal(uid, userData){
   }
   document.getElementById("modalUserPlan").innerText = planName;
   document.getElementById("modalPlanDays").innerText = daysLeft;
-  
+
   document.getElementById("notificationText").value = "";
   document.getElementById("userModal").style.display = "block";
 }
-
 function closeModal(){
   document.getElementById("userModal").style.display = "none";
 }
 
 /* Send Notification */
-async function sendNotification(){
+document.getElementById("sendBtn").addEventListener("click", async()=>{
   const msg = document.getElementById("notificationText").value.trim();
   if(!msg){
     alert("Enter a message");
+    return;
+  }
+  if(!currentUserId){
+    alert("Select a user first");
     return;
   }
   await addDoc(collection(db,"notifications"),{
@@ -253,16 +218,16 @@ async function sendNotification(){
   });
   alert("Notification sent!");
   closeModal();
-}
+});
 
-/* Logout */
-function logout(){
-  signOut(auth).then(()=> location.href="admin-login.html");
-}
+/* Close Modal Button */
+document.getElementById("closeBtn").addEventListener("click", closeModal);
 
-/* User Icon */
-document.getElementById("userIcon").addEventListener("click", ()=>{
-  alert("Already in Users page");
+/* Close modal on outside click */
+window.addEventListener("click", (e)=>{
+  if(e.target == document.getElementById("userModal")){
+    closeModal();
+  }
 });
 </script>
 </body>
