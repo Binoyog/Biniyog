@@ -10,25 +10,44 @@ body{
   font-family: Arial, sans-serif;
   background:#f2f4f7;
 }
+.header{
+  display:flex;
+  justify-content:flex-end;
+  align-items:center;
+  padding:10px 20px;
+  background:#fff;
+  box-shadow:0 2px 8px rgba(0,0,0,.1);
+}
+.user-icon{
+  width:40px;
+  height:40px;
+  background:#198754;
+  color:#fff;
+  border-radius:50%;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  font-weight:bold;
+  cursor:pointer;
+  margin-left:10px;
+}
+.logout{
+  background:#dc3545;
+  color:#fff;
+  border:none;
+  padding:10px;
+  border-radius:5px;
+  cursor:pointer;
+}
 .container{
   max-width:1200px;
   margin:auto;
   padding:20px;
 }
-.logout{
-  background:#000;
-  color:#fff;
-  border:none;
-  padding:10px;
-  width:100%;
-  margin-bottom:20px;
-  border-radius:5px;
-  cursor:pointer;
-}
 .dashboard{
   display:flex;
   gap:20px;
-  flex-wrap: wrap; /* ছোট স্ক্রিনে stacked হবে */
+  flex-wrap: wrap;
 }
 .card{
   flex: 1;
@@ -62,9 +81,37 @@ button{
 }
 .approve{background:#198754}
 .reject{background:#dc3545}
-#depositList, #withdrawList{
+#depositList, #withdrawList, #userList{
   overflow-y:auto;
-  max-height:600px;
+  max-height:500px;
+}
+.modal{
+  position:fixed;
+  top:0; left:0;
+  width:100%; height:100%;
+  background:rgba(0,0,0,0.6);
+  display:none;
+  justify-content:center;
+  align-items:center;
+}
+.modal-content{
+  background:#fff;
+  padding:20px;
+  border-radius:8px;
+  width:90%;
+  max-width:600px;
+}
+.close-btn{
+  float:right;
+  cursor:pointer;
+  font-weight:bold;
+  font-size:18px;
+  color:#dc3545;
+}
+.user-notify{
+  display:flex;
+  gap:10px;
+  margin-top:5px;
 }
 @media (max-width:768px){
   .dashboard{
@@ -75,21 +122,32 @@ button{
 </head>
 <body>
 
-<div class="container">
+<div class="header">
   <button class="logout" onclick="logout()">Logout</button>
+  <div class="user-icon" onclick="openUserModal()">U</div>
+</div>
 
+<div class="container">
   <div class="dashboard">
-    <!-- Deposits Card -->
+    <!-- Deposits -->
     <div class="card">
       <h2>Pending Deposits</h2>
       <div id="depositList">Loading...</div>
     </div>
-
-    <!-- Withdraws Card -->
+    <!-- Withdraws -->
     <div class="card">
       <h2>Pending Withdraws</h2>
       <div id="withdrawList">Loading...</div>
     </div>
+  </div>
+</div>
+
+<!-- User Modal -->
+<div class="modal" id="userModal">
+  <div class="modal-content">
+    <span class="close-btn" onclick="closeUserModal()">×</span>
+    <h2>All Users</h2>
+    <div id="userList">Loading...</div>
   </div>
 </div>
 
@@ -189,6 +247,51 @@ async function loadWithdraws(){
   }
 }
 
+/* ================= USER MODAL ================= */
+async function openUserModal(){
+  const modal = document.getElementById("userModal");
+  modal.style.display = "flex";
+  userList.innerHTML = "Loading...";
+  const q = query(collection(db,"users"));
+  const snap = await getDocs(q);
+  if(snap.empty){
+    userList.innerHTML = "No users found";
+    return;
+  }
+  userList.innerHTML = "";
+  snap.forEach(u=>{
+    const data = u.data();
+    userList.innerHTML += `
+      <div class="item">
+        <b>Phone:</b> ${data.phone || "N/A"}<br>
+        <b>Balance:</b> ৳${data.balance || 0}<br>
+        <div class="user-notify">
+          <input type="text" placeholder="Write notification..." id="notif-${u.id}" style="flex:1;padding:5px;border:1px solid #ddd;border-radius:5px;">
+          <button style="flex:none;background:#198754;color:#fff;border:none;padding:5px 10px;border-radius:5px;cursor:pointer;" onclick="sendNotification('${u.id}')">Send</button>
+        </div>
+      </div>
+    `;
+  });
+}
+
+function closeUserModal(){
+  document.getElementById("userModal").style.display = "none";
+}
+
+async function sendNotification(uid){
+  const input = document.getElementById(`notif-${uid}`);
+  const message = input.value.trim();
+  if(!message) return alert("Please write a notification message");
+  
+  await addDoc(collection(db,"notifications"),{
+    uid: uid,
+    message: message,
+    createdAt: serverTimestamp()
+  });
+  alert("Notification sent!");
+  input.value = "";
+}
+
 /* ================= ACTIONS ================= */
 window.approveDeposit = async(id)=>{
   const ref = doc(db,"deposits",id);
@@ -198,11 +301,7 @@ window.approveDeposit = async(id)=>{
   await updateDoc(ref,{status:"approved", approvedAt: serverTimestamp()});
   await updateDoc(doc(db,"users",d.uid),{balance: increment(d.amount)});
   await addDoc(collection(db,"transactions"),{
-    uid: d.uid,
-    type:"deposit",
-    amount: d.amount,
-    status:"approved",
-    createdAt: serverTimestamp()
+    uid: d.uid, type:"deposit", amount: d.amount, status:"approved", createdAt: serverTimestamp()
   });
   loadDeposits();
 };
@@ -220,11 +319,7 @@ window.approveWithdraw = async(id)=>{
   await updateDoc(ref,{status:"approved", approvedAt: serverTimestamp()});
   await updateDoc(doc(db,"users",w.uid),{balance: increment(-w.amount)});
   await addDoc(collection(db,"transactions"),{
-    uid: w.uid,
-    type:"withdraw",
-    amount: w.amount,
-    status:"approved",
-    createdAt: serverTimestamp()
+    uid: w.uid, type:"withdraw", amount: w.amount, status:"approved", createdAt: serverTimestamp()
   });
   loadWithdraws();
 };
