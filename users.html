@@ -5,103 +5,155 @@
 <title>Biniyog | Users</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
+/* ================= Body ================= */
 body{
   margin:0;
   font-family: Arial, sans-serif;
-  background:#f2f4f7;
+  background:#0b1a33; /* Dark Blue Background */
+  color:#fff;
 }
+
+/* ================= Header ================= */
 .header{
   display:flex;
-  justify-content:space-between;
+  justify-content:flex-end;
   align-items:center;
   padding:10px 20px;
-  background:#fff;
-  box-shadow:0 2px 8px rgba(0,0,0,.1);
+  background:#0b1a33;
+  box-shadow:0 2px 10px rgba(0,0,0,.5);
 }
-.back-btn{
-  background:#198754;
+
+/* ================= User Icon ================= */
+.user-icon{
+  width:50px;
+  height:50px;
+  background:#ffc107; /* Accent color */
+  color:#000;
+  border-radius:50%;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  font-weight:bold;
+  font-size:22px;
+  cursor:pointer;
+  margin-left:15px;
+}
+
+/* ================= Logout Button ================= */
+.logout{
+  background:#dc3545;
   color:#fff;
   border:none;
-  padding:5px 10px;
+  padding:8px 12px;
   border-radius:5px;
   cursor:pointer;
   font-size:14px;
+  margin-right:10px;
 }
+
+/* ================= Container ================= */
 .container{
-  max-width:1000px;
+  max-width:1200px;
   margin:auto;
   padding:20px;
 }
+
+/* ================= Users Table/Card ================= */
 .user-list{
   display:flex;
   flex-direction:column;
   gap:10px;
-  max-height:500px;
-  overflow-y:auto;
 }
-.user-item{
-  background:#fff;
-  padding:10px;
-  border-radius:5px;
-  box-shadow:0 2px 6px rgba(0,0,0,.1);
+.user-card{
+  background:#1a2a4d;
+  padding:15px;
+  border-radius:8px;
   cursor:pointer;
+  transition:0.2s;
   display:flex;
   justify-content:space-between;
   align-items:center;
 }
-.user-item:hover{
-  background:#e9f5ef;
+.user-card:hover{
+  background:#264080;
 }
-.user-detail{
-  background:#fff;
-  padding:15px;
+.user-card b{
+  color:#ffc107;
+}
+
+/* ================= Modal ================= */
+.modal{
+  display:none; 
+  position:fixed; 
+  z-index:1000;
+  left:0;
+  top:0;
+  width:100%; 
+  height:100%; 
+  overflow:auto;
+  background-color:rgba(0,0,0,0.7);
+}
+.modal-content{
+  background:#1a2a4d;
+  margin:5% auto;
+  padding:20px;
   border-radius:8px;
-  box-shadow:0 2px 8px rgba(0,0,0,.1);
-  margin-top:20px;
-  display:none;
+  width:90%;
+  max-width:450px;
 }
-.user-detail h3{
+.modal-content h3{
   margin-top:0;
+  color:#ffc107;
 }
-input, textarea{
+.modal-content p{
+  margin:5px 0;
+}
+.modal-content input, .modal-content textarea{
   width:100%;
   padding:8px;
-  margin-bottom:10px;
+  margin:5px 0 10px 0;
   border-radius:5px;
-  border:1px solid #ccc;
-  font-size:14px;
+  border:none;
 }
-button.send{
+.modal-content button{
   background:#198754;
   color:#fff;
+  padding:8px 12px;
   border:none;
-  padding:10px;
   border-radius:5px;
   cursor:pointer;
-  font-size:14px;
+}
+.close-btn{
+  background:#dc3545;
+  margin-left:10px;
 }
 </style>
 </head>
 <body>
 
 <div class="header">
-  <button class="back-btn" onclick="goBack()">Back</button>
-  <h2>Users List</h2>
+  <button class="logout" onclick="logout()">Logout</button>
+  <div class="user-icon" id="userIcon">U</div>
 </div>
 
 <div class="container">
-  <div class="user-list" id="userList">
-    Loading users...
-  </div>
+  <h2>All Users</h2>
+  <div class="user-list" id="userList">Loading...</div>
+</div>
 
-  <div class="user-detail" id="userDetail">
-    <h3 id="detailName">User Details</h3>
-    <p><b>Phone:</b> <span id="detailPhone"></span></p>
-    <p><b>Balance:</b> ৳<span id="detailBalance"></span></p>
-    <p><b>Plan:</b> <span id="detailPlan"></span></p>
-    <p><b>Days Remaining:</b> <span id="detailDays"></span></p>
-    <textarea id="notificationText" placeholder="Write notification here..."></textarea>
-    <button class="send" onclick="sendNotification()">Send Notification</button>
+<!-- Modal -->
+<div id="userModal" class="modal">
+  <div class="modal-content">
+    <h3 id="modalUserName">User Name</h3>
+    <p><b>Phone:</b> <span id="modalUserPhone"></span></p>
+    <p><b>Balance:</b> ৳<span id="modalUserBalance"></span></p>
+    <p><b>Current Plan:</b> <span id="modalUserPlan">None</span></p>
+    <p><b>Plan Days Left:</b> <span id="modalPlanDays">0</span></p>
+    <textarea id="notificationText" placeholder="Enter message to send"></textarea>
+    <div style="display:flex; justify-content:flex-end; gap:10px;">
+      <button onclick="sendNotification()">Send</button>
+      <button class="close-btn" onclick="closeModal()">Close</button>
+    </div>
   </div>
 </div>
 
@@ -110,7 +162,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebas
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 import { getFirestore, collection, getDocs, doc, getDoc, addDoc, serverTimestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 
-/* Firebase config */
+/* Firebase Config */
 const firebaseConfig = {
   apiKey: "AIzaSyBFsTzlRPoWHVXEHbKrPdwxslxZGa7Kqfw",
   authDomain: "biniyog-95d00.firebaseapp.com",
@@ -124,9 +176,7 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-let currentUserId = null;
-
-/* ================= AUTH CHECK ================= */
+/* Auth Check */
 onAuthStateChanged(auth, async(user)=>{
   if(!user){
     location.href = "admin-login.html";
@@ -139,79 +189,81 @@ onAuthStateChanged(auth, async(user)=>{
     location.href = "admin-login.html";
     return;
   }
-  loadUsers();
+  loadUsersRealtime();
 });
 
-/* ================= LOAD USERS ================= */
-async function loadUsers(){
-  const userList = document.getElementById("userList");
-  userList.innerHTML = "Loading...";
-  const snap = await getDocs(collection(db,"users"));
-  userList.innerHTML = "";
-
-  snap.forEach(docSnap=>{
-    const user = docSnap.data();
-    const div = document.createElement("div");
-    div.className = "user-item";
-    div.id = docSnap.id;
-    div.innerHTML = `<span>${user.name || "N/A"} | ${user.phone || "N/A"} | ৳${user.balance || 0}</span>`;
-    div.onclick = ()=>showUserDetail(docSnap.id);
-    userList.appendChild(div);
-
-    // Real-time update of balance
-    onSnapshot(doc(db,"users",docSnap.id),(doc)=>{
-      const data = doc.data();
-      div.innerHTML = `<span>${data.name || "N/A"} | ${data.phone || "N/A"} | ৳${data.balance || 0}</span>`;
+/* Load Users with Realtime Balance */
+function loadUsersRealtime(){
+  const list = document.getElementById("userList");
+  list.innerHTML = "";
+  const usersCol = collection(db,"users");
+  onSnapshot(usersCol, snap=>{
+    list.innerHTML = "";
+    snap.forEach(docSnap=>{
+      const u = docSnap.data();
+      if(u.role === "admin") return; // skip admin
+      const card = document.createElement("div");
+      card.className = "user-card";
+      card.innerHTML = `<b>${u.name || "No Name"}</b> - ${u.phone || "N/A"} - ৳${u.balance || 0}`;
+      card.onclick = ()=>openModal(docSnap.id, u);
+      list.appendChild(card);
     });
   });
 }
 
-/* ================= SHOW USER DETAIL ================= */
-async function showUserDetail(uid){
+/* Modal Logic */
+let currentUserId = null;
+function openModal(uid, userData){
   currentUserId = uid;
-  const userSnap = await getDoc(doc(db,"users",uid));
-  if(!userSnap.exists()) return;
-  const user = userSnap.data();
-
-  document.getElementById("detailName").innerText = user.name || "N/A";
-  document.getElementById("detailPhone").innerText = user.phone || "N/A";
-  document.getElementById("detailBalance").innerText = user.balance || 0;
-
-  // ধরছি প্ল্যান ডেটা "plans" collection-এ store আছে user.uid অনুযায়ী
-  const planSnap = await getDoc(doc(db,"plans",uid));
-  if(planSnap.exists()){
-    const plan = planSnap.data();
-    document.getElementById("detailPlan").innerText = plan.name || "N/A";
-    document.getElementById("detailDays").innerText = plan.remainingDays || 0;
-  }else{
-    document.getElementById("detailPlan").innerText = "N/A";
-    document.getElementById("detailDays").innerText = "N/A";
+  document.getElementById("modalUserName").innerText = userData.name || "No Name";
+  document.getElementById("modalUserPhone").innerText = userData.phone || "N/A";
+  document.getElementById("modalUserBalance").innerText = userData.balance || 0;
+  
+  // Current Plan
+  let planName = userData.planName || "None";
+  let daysLeft = 0;
+  if(userData.planEnd){
+    const end = userData.planEnd.toDate ? userData.planEnd.toDate() : new Date(userData.planEnd);
+    const now = new Date();
+    daysLeft = Math.ceil((end - now)/(1000*60*60*24));
+    if(daysLeft < 0) daysLeft = 0;
   }
-
-  document.getElementById("userDetail").style.display = "block";
+  document.getElementById("modalUserPlan").innerText = planName;
+  document.getElementById("modalPlanDays").innerText = daysLeft;
+  
+  document.getElementById("notificationText").value = "";
+  document.getElementById("userModal").style.display = "block";
 }
 
-/* ================= SEND NOTIFICATION ================= */
+function closeModal(){
+  document.getElementById("userModal").style.display = "none";
+}
+
+/* Send Notification */
 async function sendNotification(){
-  const text = document.getElementById("notificationText").value.trim();
-  if(!text || !currentUserId){
-    alert("Enter notification text.");
+  const msg = document.getElementById("notificationText").value.trim();
+  if(!msg){
+    alert("Enter a message");
     return;
   }
-
   await addDoc(collection(db,"notifications"),{
     uid: currentUserId,
-    message: text,
+    message: msg,
     createdAt: serverTimestamp()
   });
   alert("Notification sent!");
-  document.getElementById("notificationText").value = "";
+  closeModal();
 }
 
-/* ================= BACK BUTTON ================= */
-function goBack(){
-  window.location.href = "admin-dashboard.html";
+/* Logout */
+function logout(){
+  signOut(auth).then(()=> location.href="admin-login.html");
 }
+
+/* User Icon */
+document.getElementById("userIcon").addEventListener("click", ()=>{
+  alert("Already in Users page");
+});
 </script>
 </body>
 </html>
