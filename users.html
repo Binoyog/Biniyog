@@ -1,224 +1,246 @@
-<!DOCTYPE html>  <html lang="bn">  
-<head>  
-<meta charset="UTF-8">  
-<title>Biniyog | Users</title>  
-<meta name="viewport" content="width=device-width, initial-scale=1.0">  
-<style>  
-/* ================= Body ================= */  
-body{  
-  margin:0;  
-  font-family: Arial, sans-serif;  
-  background:#0b1a33; /* Dark Blue Background */  
-  color:#fff;  
-}  /* ================= Container ================= */
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<title>Biniyog | Users</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+/* ================= Body ================= */
+body{
+  margin:0;
+  font-family: Arial, sans-serif;
+  background:#0b1a33; /* Dark Blue Background */
+  color:#fff;
+}
+
+/* ================= Container ================= */
 .container{
-max-width:1200px;
-margin:auto;
-padding:20px;
+  max-width:1200px;
+  margin:auto;
+  padding:20px;
 }
 
 /* ================= Users Table/Card ================= */
 h2{
-color:#ffc107;
-margin-bottom:20px;
+  color:#ffc107;
+  margin-bottom:20px;
 }
 .user-list{
-display:flex;
-flex-direction:column;
-gap:10px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
 }
 .user-card{
-background:#1a2a4d;
-padding:15px;
-border-radius:8px;
-cursor:pointer;
-transition:0.2s;
-display:flex;
-justify-content:space-between;
-align-items:center;
+  background:#1a2a4d;
+  padding:15px;
+  border-radius:8px;
+  cursor:pointer;
+  transition:0.2s;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
 }
 .user-card:hover{
-background:#264080;
+  background:#264080;
 }
 .user-card b{
-color:#ffc107;
+  color:#ffc107;
 }
 
 /* ================= Modal ================= */
 .modal{
-display:none;
-position:fixed;
-z-index:1000;
-left:0;
-top:0;
-width:100%;
-height:100%;
-overflow:auto;
-background-color:rgba(0,0,0,0.7);
+  display:none; 
+  position:fixed; 
+  z-index:1000;
+  left:0;
+  top:0;
+  width:100%; 
+  height:100%; 
+  overflow:auto;
+  background-color:rgba(0,0,0,0.7);
 }
 .modal-content{
-background:#1a2a4d;
-margin:5% auto;
-padding:20px;
-border-radius:8px;
-width:90%;
-max-width:450px;
+  background:#1a2a4d;
+  margin:5% auto;
+  padding:20px;
+  border-radius:8px;
+  width:90%;
+  max-width:450px;
 }
 .modal-content h3{
-margin-top:0;
-color:#ffc107;
+  margin-top:0;
+  color:#ffc107;
 }
 .modal-content p{
-margin:5px 0;
+  margin:5px 0;
 }
 .modal-content textarea{
-width:100%;
-padding:8px;
-margin:5px 0 10px 0;
-border-radius:5px;
-border:none;
+  width:100%;
+  padding:8px;
+  margin:5px 0 10px 0;
+  border-radius:5px;
+  border:none;
 }
 .modal-content button{
-background:#198754;
-color:#fff;
-padding:8px 12px;
-border:none;
-border-radius:5px;
-cursor:pointer;
+  background:#198754;
+  color:#fff;
+  padding:8px 12px;
+  border:none;
+  border-radius:5px;
+  cursor:pointer;
 }
 .close-btn{
-background:#dc3545;
-margin-left:10px;
+  background:#dc3545;
+  margin-left:10px;
 }
 </style>
+</head>
+<body>
 
-</head>  
-<body>  <div class="container">  
-  <h2>All Users</h2>  
-  <div class="user-list" id="userList">Loading users...</div>  
-</div>  <!-- Modal -->  <div id="userModal" class="modal">  
-  <div class="modal-content">  
-    <h3 id="modalUserName">User Name</h3>  
-    <p><b>Phone:</b> <span id="modalUserPhone"></span></p>  
-    <p><b>Balance:</b> ৳<span id="modalUserBalance"></span></p>  
-    <p><b>Current Plan:</b> <span id="modalUserPlan">None</span></p>  
-    <p><b>Plan Days Left:</b> <span id="modalPlanDays">0</span></p>  
-    <textarea id="notificationText" placeholder="Enter message to send"></textarea>  
-    <div style="display:flex; justify-content:flex-end; gap:10px;">  
-      <button id="sendBtn">Send</button>  
-      <button id="closeBtn" class="close-btn">Close</button>  
-    </div>  
-  </div>  
-</div>  <script type="module">  
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";  
-import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";  
-import { getFirestore, collection, onSnapshot, doc, getDoc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";  
-  
-/* Firebase Config */  
-const firebaseConfig = {  
-  apiKey: "AIzaSyBFsTzlRPoWHVXEHbKrPdwxslxZGa7Kqfw",  
-  authDomain: "biniyog-95d00.firebaseapp.com",  
-  projectId: "biniyog-95d00",  
-  storageBucket: "biniyog-95d00.firebasestorage.app",  
-  messagingSenderId: "523238228802",  
-  appId: "1:523238228802:web:a65183bdc4c268f94efedb"  
-};  
-  
-const app = initializeApp(firebaseConfig);  
-const auth = getAuth(app);  
-const db = getFirestore(app);  
-  
-let currentUserId = null;  
-  
-/* Auth Check */  
-onAuthStateChanged(auth, async(user)=>{  
-  if(!user){  
-    location.href = "admin-login.html";  
-    return;  
-  }  
-  const uSnap = await getDoc(doc(db,"users",user.uid));  
-  if(!uSnap.exists() || uSnap.data().role !== "admin"){  
-    alert("Access denied");  
-    await signOut(auth);  
-    location.href = "admin-login.html";  
-    return;  
-  }  
-  loadUsersRealtime();  
-});  
-  
-/* Load Users Realtime */  
-function loadUsersRealtime(){  
-  const list = document.getElementById("userList");  
-  const usersCol = collection(db,"users");  
-  onSnapshot(usersCol, snap=>{  
-    list.innerHTML = "";  
-    snap.forEach(docSnap=>{  
-      const u = docSnap.data();  
-      if(u.role === "admin") return; // skip admin  
-      const card = document.createElement("div");  
-      card.className = "user-card";  
-      card.innerHTML = `<b>${u.name || "No Name"}</b> - ${u.phone || "N/A"} - ৳${u.balance || 0}`;  
-      card.onclick = ()=>openModal(docSnap.id, u);  
-      list.appendChild(card);  
-    });  
-    if(list.innerHTML === "") list.innerHTML = "No users found.";  
-  });  
-}  
-  
-/* Modal Functions */  
-function openModal(uid, userData){  
-  currentUserId = uid;  
-  document.getElementById("modalUserName").innerText = userData.name || "No Name";  
-  document.getElementById("modalUserPhone").innerText = userData.phone || "N/A";  
-  document.getElementById("modalUserBalance").innerText = userData.balance || 0;  
-  
-  // Current Plan  
-  const planName = userData.planName || "None";  
-  let daysLeft = 0;  
-  if(userData.planEnd){  
-    const end = userData.planEnd.toDate ? userData.planEnd.toDate() : new Date(userData.planEnd);  
-    const now = new Date();  
-    daysLeft = Math.ceil((end - now)/(1000*60*60*24));  
-    if(daysLeft < 0) daysLeft = 0;  
-  }  
-  document.getElementById("modalUserPlan").innerText = planName;  
-  document.getElementById("modalPlanDays").innerText = daysLeft;  
-  
-  document.getElementById("notificationText").value = "";  
-  document.getElementById("userModal").style.display = "block";  
-}  
-function closeModal(){  
-  document.getElementById("userModal").style.display = "none";  
-}  
-  
-/* Send Notification */  
-document.getElementById("sendBtn").addEventListener("click", async()=>{  
-  const msg = document.getElementById("notificationText").value.trim();  
-  if(!msg){  
-    alert("Enter a message");  
-    return;  
-  }  
-  if(!currentUserId){  
-    alert("Select a user first");  
-    return;  
-  }  
-  await addDoc(collection(db,"notifications"),{  
-    uid: currentUserId,  
-    message: msg,  
-    createdAt: serverTimestamp()  
-  });  
-  alert("Notification sent!");  
-  closeModal();  
-});  
-  
-/* Close Modal Button */  
-document.getElementById("closeBtn").addEventListener("click", closeModal);  
-  
-/* Close modal on outside click */  
-window.addEventListener("click", (e)=>{  
-  if(e.target == document.getElementById("userModal")){  
-    closeModal();  
-  }  
-});  
-</script>  </body>  
+<div class="container">
+  <h2>All Users</h2>
+  <div class="user-list" id="userList">Loading users...</div>
+</div>
+
+<!-- Modal -->
+<div id="userModal" class="modal">
+  <div class="modal-content">
+    <h3 id="modalUserName">User Name</h3>
+    <p><b>Phone:</b> <span id="modalUserPhone"></span></p>
+    <p><b>Balance:</b> ৳<span id="modalUserBalance"></span></p>
+    <p><b>Current Plan:</b> <span id="modalUserPlan">None</span></p>
+    <p><b>Plan Days Left:</b> <span id="modalPlanDays">0</span></p>
+    <textarea id="notificationText" placeholder="Enter message to send"></textarea>
+    <div style="display:flex; justify-content:flex-end; gap:10px;">
+      <button id="sendBtn">Send</button>
+      <button id="closeBtn" class="close-btn">Close</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
+import { getFirestore, collection, onSnapshot, doc, getDoc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+
+/* Firebase Config */
+const firebaseConfig = {
+  apiKey: "AIzaSyBFsTzlRPoWHVXEHbKrPdwxslxZGa7Kqfw",
+  authDomain: "biniyog-95d00.firebaseapp.com",
+  projectId: "biniyog-95d00",
+  storageBucket: "biniyog-95d00.firebasestorage.app",
+  messagingSenderId: "523238228802",
+  appId: "1:523238228802:web:a65183bdc4c268f94efedb"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+let currentUserId = null;
+
+/* Auth Check */
+onAuthStateChanged(auth, async(user)=>{
+  if(!user){
+    location.href = "admin-login.html";
+    return;
+  }
+  const uSnap = await getDoc(doc(db,"users",user.uid));
+  if(!uSnap.exists() || uSnap.data().role !== "admin"){
+    alert("Access denied");
+    await signOut(auth);
+    location.href = "admin-login.html";
+    return;
+  }
+  loadUsersRealtime();
+});
+
+/* Load Users Realtime */
+function loadUsersRealtime(){
+  const list = document.getElementById("userList");
+  const usersCol = collection(db,"users");
+  onSnapshot(usersCol, snap=>{
+    list.innerHTML = "";
+    snap.forEach(docSnap=>{
+      const u = docSnap.data();
+      if(u.role === "admin") return; // skip admin
+      const card = document.createElement("div");
+      card.className = "user-card";
+      card.innerHTML = `<b>${u.name || "No Name"}</b> - ${u.phone || "N/A"} - ৳${u.balance || 0}`;
+      card.onclick = ()=>openModal(docSnap.id, u);
+      list.appendChild(card);
+    });
+    if(list.innerHTML === "") list.innerHTML = "No users found.";
+  });
+}
+
+/* Modal Functions */
+async function openModal(uid, userData){
+  currentUserId = uid;
+  document.getElementById("modalUserName").innerText = userData.name || "No Name";
+  document.getElementById("modalUserPhone").innerText = userData.phone || "N/A";
+  document.getElementById("modalUserBalance").innerText = userData.balance || 0;
+
+  // Fetch Current Plan from user_plans collection
+  let planName = "None";
+  let daysLeft = 0;
+
+  try{
+    const planDoc = await getDoc(doc(db,"user_plans",uid));
+    if(planDoc.exists()){
+      const planData = planDoc.data();
+      planName = planData.planName || "None";
+      if(planData.planEnd){
+        const end = planData.planEnd.toDate ? planData.planEnd.toDate() : new Date(planData.planEnd);
+        const now = new Date();
+        daysLeft = Math.ceil((end - now)/(1000*60*60*24));
+        if(daysLeft < 0) daysLeft = 0;
+      }
+    }
+  }catch(err){
+    console.error("Error fetching user plan:", err);
+  }
+
+  document.getElementById("modalUserPlan").innerText = planName;
+  document.getElementById("modalPlanDays").innerText = daysLeft;
+
+  document.getElementById("notificationText").value = "";
+  document.getElementById("userModal").style.display = "block";
+}
+
+function closeModal(){
+  document.getElementById("userModal").style.display = "none";
+}
+
+/* Send Notification */
+document.getElementById("sendBtn").addEventListener("click", async()=>{
+  const msg = document.getElementById("notificationText").value.trim();
+  if(!msg){
+    alert("Enter a message");
+    return;
+  }
+  if(!currentUserId){
+    alert("Select a user first");
+    return;
+  }
+  await addDoc(collection(db,"notifications"),{
+    uid: currentUserId,
+    message: msg,
+    createdAt: serverTimestamp()
+  });
+  alert("Notification sent!");
+  closeModal();
+});
+
+/* Close Modal Button */
+document.getElementById("closeBtn").addEventListener("click", closeModal);
+
+/* Close modal on outside click */
+window.addEventListener("click", (e)=>{
+  if(e.target == document.getElementById("userModal")){
+    closeModal();
+  }
+});
+</script>
+</body>
 </html>
