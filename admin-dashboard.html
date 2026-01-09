@@ -166,7 +166,7 @@ async function loadWithdraws(){
         <b>মোবাইল:</b> ${user.phone}<br>
         <b>রিয়েল ব্যালেন্স:</b> ৳${user.balance}<br>
         <b>Withdraw Amount:</b> ৳${x.amount}<br>
-        <b>Withdraw Number:</b> ${user.phone}<br>
+        <b>Withdraw Number:</b> ${x.phone || "N/A"}<br>
         <b>Method:</b> ${x.method || ""}<br>
         <div class="row">
           <button class="approve" onclick="approveWithdraw('${d.id}')">Approve</button>
