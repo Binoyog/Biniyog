@@ -29,25 +29,27 @@ h1 {text-align:center; margin-bottom:20px; color:#ffd700;}
 <div id="userList">Loading users...</div>
 </div>
 
+<!-- Modal -->
 <div id="userModal" class="modal">
-<div class="modal-content">
-<h3 id="modalUserName">User Name</h3>
-<p><b>Phone:</b> <span id="modalUserPhone"></span></p>
-<p><b>Balance:</b> ৳<span id="modalUserBalance"></span></p>
-<p><b>Current Plan:</b> <span id="modalUserPlan">None</span></p>
-<p><b>Plan Days Left:</b> <span id="modalPlanDays">0</span></p>
-<textarea id="notificationText" placeholder="Enter message to send"></textarea>
-<div style="display:flex; justify-content:flex-end; margin-top:10px;">
-<button id="sendBtn">Send</button>
-<button id="closeBtn">Close</button>
-</div>
-</div>
+  <div class="modal-content">
+    <h3 id="modalUserName">User Name</h3>
+    <p><b>Phone:</b> <span id="modalUserPhone"></span></p>
+    <p><b>Balance:</b> ৳<span id="modalUserBalance"></span></p>
+    <p><b>Current Plan:</b> <span id="modalUserPlan">None</span></p>
+    <p><b>Plan Days Left:</b> <span id="modalPlanDays">0</span></p>
+    <textarea id="notificationText" placeholder="Enter message to send"></textarea>
+    <div style="display:flex; justify-content:flex-end; gap:10px;">
+      <button id="sendBtn">Send</button>
+      <button id="closeBtn">Close</button>
+    </div>
+  </div>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
 import { getFirestore, collection, getDocs, doc, getDoc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 
+// Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyBFsTzlRPoWHVXEHbKrPdwxslxZGa7Kqfw",
   authDomain: "biniyog-95d00.firebaseapp.com",
@@ -56,6 +58,7 @@ const firebaseConfig = {
   messagingSenderId: "523238228802",
   appId: "1:523238228802:web:a65183bdc4c268f94efedb"
 };
+
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
@@ -65,19 +68,17 @@ const closeBtn = document.getElementById("closeBtn");
 const sendBtn = document.getElementById("sendBtn");
 let currentUserId = null;
 
-// Load users with debug
+// Load users from Firestore
 async function loadUsers(){
   userList.innerHTML = "Loading users...";
-  try {
-    const snap = await getDocs(collection(db,"users"));
-    console.log("Users fetched:", snap.docs.map(d=>d.data())); // Debug
-    if(snap.empty){ userList.innerHTML="No users found"; return; }
+  try{
+    const snapshot = await getDocs(collection(db,"users"));
+    if(snapshot.empty){ userList.innerHTML="No users found"; return; }
     userList.innerHTML = "";
-    snap.forEach(docSnap=>{
+    snapshot.forEach(docSnap=>{
       const user = docSnap.data();
-      console.log("User:", user);
       const div = document.createElement("div");
-      div.className = "user-item";
+      div.className="user-item";
       div.innerHTML = `<p><b>${user.name || "No Name"}</b></p>
                        <p>${user.phone || "N/A"}</p>
                        <p>৳${user.balance || 0}</p>`;
@@ -85,17 +86,19 @@ async function loadUsers(){
       userList.appendChild(div);
     });
   } catch(e){
-    console.error("Error fetching users:", e);
-    userList.innerHTML = "Error loading users";
+    console.error("Error loading users:", e);
+    userList.innerHTML="Error loading users";
   }
 }
 
-// Open modal
+// Open modal with plan & notification
 function openModal(uid, userData){
   currentUserId = uid;
-  document.getElementById("modalUserName").innerText = userData.name || "No Name";
-  document.getElementById("modalUserPhone").innerText = userData.phone || "N/A";
-  document.getElementById("modalUserBalance").innerText = userData.balance || 0;
+  document.getElementById("modalUserName").innerText=userData.name || "No Name";
+  document.getElementById("modalUserPhone").innerText=userData.phone || "N/A";
+  document.getElementById("modalUserBalance").innerText=userData.balance || 0;
+  document.getElementById("notificationText").value="";
+
   const userRef = doc(db,"users",uid);
   getDoc(userRef).then(docSnap=>{
     if(docSnap.exists()){
@@ -112,7 +115,7 @@ function openModal(uid, userData){
       document.getElementById("modalPlanDays").innerText=daysLeft;
     }
   });
-  document.getElementById("notificationText").value="";
+
   userModal.style.display="flex";
 }
 
@@ -121,20 +124,24 @@ closeBtn.addEventListener("click", ()=>{userModal.style.display="none";});
 window.addEventListener("click",(e)=>{if(e.target==userModal) userModal.style.display="none";});
 
 // Send notification
-sendBtn.addEventListener("click", async ()=>{
+sendBtn.addEventListener("click", async()=>{
   const msg = document.getElementById("notificationText").value.trim();
   if(!msg){alert("Enter a message"); return;}
   if(!currentUserId){alert("User not selected"); return;}
-  await addDoc(collection(db,"notifications"),{
-    uid: currentUserId,
-    message: msg,
-    createdAt: serverTimestamp()
-  });
-  alert("Notification sent!");
-  userModal.style.display="none";
+  try{
+    await addDoc(collection(db,"notifications"),{
+      uid: currentUserId,
+      message: msg,
+      createdAt: serverTimestamp()
+    });
+    alert("Notification sent!");
+    userModal.style.display="none";
+  } catch(e){
+    console.error(e);
+    alert("Error sending notification");
+  }
 });
 
-// Initialize
 loadUsers();
 </script>
 </body>
