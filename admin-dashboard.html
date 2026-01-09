@@ -19,8 +19,8 @@ body{
   box-shadow:0 2px 8px rgba(0,0,0,.1);
 }
 .user-icon{
-  width:40px;
-  height:40px;
+  width:50px;
+  height:50px;
   background:#198754;
   color:#fff;
   border-radius:50%;
@@ -28,16 +28,18 @@ body{
   justify-content:center;
   align-items:center;
   font-weight:bold;
+  font-size:20px;
   cursor:pointer;
-  margin-left:10px;
+  margin-left:15px;
 }
 .logout{
   background:#dc3545;
   color:#fff;
   border:none;
-  padding:10px;
+  padding:5px 10px;
   border-radius:5px;
   cursor:pointer;
+  font-size:14px;
 }
 .container{
   max-width:1200px;
@@ -53,29 +55,32 @@ body{
   flex:1;
   min-width:300px;
   background:#fff;
-  padding:20px;
+  padding:15px;
   border-radius:8px;
   box-shadow:0 2px 8px rgba(0,0,0,.1);
+  font-size:14px;
 }
 .card h2{
   margin-top:0;
+  font-size:16px;
 }
 .item{
   border-bottom:1px solid #ddd;
-  padding:10px 0;
+  padding:5px 0;
 }
 .row{
   display:flex;
   gap:10px;
-  margin-top:10px;
+  margin-top:5px;
 }
 button{
   flex:1;
-  padding:10px;
+  padding:5px;
   border:none;
   border-radius:5px;
   cursor:pointer;
   color:#fff;
+  font-size:12px;
 }
 .approve{background:#198754}
 .reject{background:#dc3545}
@@ -166,11 +171,11 @@ async function loadDeposits(){
     const user = userSnap.data();
     depositList.innerHTML += `
       <div class="item">
-        <b>User Phone:</b> ${user.phone || "N/A"}<br>
-        <b>User Balance:</b> ৳${user.balance || 0}<br>
-        <b>Deposit Amount:</b> ৳${x.amount}<br>
-        <b>Deposit Method:</b> ${x.method || "N/A"}<br>
-        <b>Deposit Number:</b> ${x.phone || x.customerPhone || "N/A"}<br>
+        <b>Phone:</b> ${user.phone || "N/A"} |
+        <b>Balance:</b> ৳${user.balance || 0} |
+        <b>Amount:</b> ৳${x.amount} |
+        <b>Method:</b> ${x.method || "N/A"} |
+        <b>Deposit No:</b> ${x.phone || x.customerPhone || "N/A"} 
         <div class="row">
           <button class="approve" onclick="approveDeposit('${d.id}')">Approve</button>
           <button class="reject" onclick="rejectDeposit('${d.id}')">Reject</button>
@@ -197,11 +202,11 @@ async function loadWithdraws(){
     const user = userSnap.data();
     withdrawList.innerHTML += `
       <div class="item">
-        <b>User Phone:</b> ${user.phone || "N/A"}<br>
-        <b>User Balance:</b> ৳${user.balance || 0}<br>
-        <b>Withdraw Amount:</b> ৳${x.amount}<br>
-        <b>Withdraw Method:</b> ${x.method || "N/A"}<br>
-        <b>Withdraw Number:</b> ${x.phone || "N/A"}<br>
+        <b>Phone:</b> ${user.phone || "N/A"} |
+        <b>Balance:</b> ৳${user.balance || 0} |
+        <b>Amount:</b> ৳${x.amount} |
+        <b>Method:</b> ${x.method || "N/A"} |
+        <b>Withdraw No:</b> ${x.phone || "N/A"} 
         <div class="row">
           <button class="approve" onclick="approveWithdraw('${d.id}')">Approve</button>
           <button class="reject" onclick="rejectWithdraw('${d.id}')">Reject</button>
@@ -263,8 +268,7 @@ window.logout = async()=>{
 
 /* ================= OPEN USER PAGE ================= */
 function openUserPage(){
-  // নতুন পেজ খুলবে, তুমি পরে create করবে
-  window.location.href = "users.html";
+  window.location.href = "users.html"; // নতুন পেজ খুলবে
 }
 </script>
 </body>
