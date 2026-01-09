@@ -124,7 +124,7 @@ onAuthStateChanged(auth, async(user)=>{
   loadWithdraws();
 });
 
-/* ================= LOAD DEPOSITS (UPDATED) ================= */
+/* ================= LOAD DEPOSITS ================= */
 async function loadDeposits(){
   depositList.innerHTML = "";
   const q = query(collection(db,"deposits"), where("status","==","pending"));
@@ -135,22 +135,27 @@ async function loadDeposits(){
     return;
   }
 
-  snap.forEach(d=>{
+  for(const d of snap.docs){
     const x = d.data();
+
+    const userSnap = await getDoc(doc(db,"users",x.uid));
+    if(!userSnap.exists()) continue;
+
+    const user = userSnap.data();
 
     depositList.innerHTML += `
       <div class="item">
-        <b>User UID:</b> ${x.uid}<br>
+        <b>মোবাইল:</b> ${user.phone}<br>
+        <b>রিয়েল ব্যালেন্স:</b> ৳${user.balance}<br>
         <b>Amount:</b> ৳${x.amount}<br>
         <b>Method:</b> ${x.method || ""}<br>
-        <b>Sender Phone:</b> ${x.customerPhone || x.phone || x.senderPhone || "N/A"}
         <div class="row">
           <button class="approve" onclick="approveDeposit('${d.id}')">Approve</button>
           <button class="reject" onclick="rejectDeposit('${d.id}')">Reject</button>
         </div>
       </div>
     `;
-  });
+  }
 }
 
 /* ================= LOAD WITHDRAWS ================= */
@@ -164,21 +169,27 @@ async function loadWithdraws(){
     return;
   }
 
-  snap.forEach(d=>{
+  for(const d of snap.docs){
     const x = d.data();
+
+    const userSnap = await getDoc(doc(db,"users",x.uid));
+    if(!userSnap.exists()) continue;
+
+    const user = userSnap.data();
+
     withdrawList.innerHTML += `
       <div class="item">
-        <b>User UID:</b> ${x.uid}<br>
-        <b>Amount:</b> ৳${x.amount}<br>
+        <b>মোবাইল:</b> ${user.phone}<br>
+        <b>রিয়েল ব্যালেন্স:</b> ৳${user.balance}<br>
+        <b>Withdraw Amount:</b> ৳${x.amount}<br>
         <b>Method:</b> ${x.method || ""}<br>
-        <b>Phone:</b> ${x.phone || "N/A"}
         <div class="row">
           <button class="approve" onclick="approveWithdraw('${d.id}')">Approve</button>
           <button class="reject" onclick="rejectWithdraw('${d.id}')">Reject</button>
         </div>
       </div>
     `;
-  });
+  }
 }
 
 /* ================= ACTIONS ================= */
@@ -189,21 +200,15 @@ window.approveDeposit = async(id)=>{
 
   const d = snap.data();
 
-  await updateDoc(ref,{
-    status:"approved",
-    approvedAt: serverTimestamp()
-  });
-
-  await updateDoc(doc(db,"users",d.uid),{
-    balance: increment(d.amount)
-  });
+  await updateDoc(ref,{status:"approved",approvedAt:serverTimestamp()});
+  await updateDoc(doc(db,"users",d.uid),{balance:increment(d.amount)});
 
   await addDoc(collection(db,"transactions"),{
-    uid: d.uid,
+    uid:d.uid,
     type:"deposit",
     amount:d.amount,
     status:"approved",
-    createdAt: serverTimestamp()
+    createdAt:serverTimestamp()
   });
 
   loadDeposits();
@@ -221,21 +226,15 @@ window.approveWithdraw = async(id)=>{
 
   const w = snap.data();
 
-  await updateDoc(ref,{
-    status:"approved",
-    approvedAt: serverTimestamp()
-  });
-
-  await updateDoc(doc(db,"users",w.uid),{
-    balance: increment(-w.amount)
-  });
+  await updateDoc(ref,{status:"approved",approvedAt:serverTimestamp()});
+  await updateDoc(doc(db,"users",w.uid),{balance:increment(-w.amount)});
 
   await addDoc(collection(db,"transactions"),{
-    uid: w.uid,
+    uid:w.uid,
     type:"withdraw",
     amount:w.amount,
     status:"approved",
-    createdAt: serverTimestamp()
+    createdAt:serverTimestamp()
   });
 
   loadWithdraws();
