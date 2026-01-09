@@ -1,3 +1,146 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<title>Biniyog | Users</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+/* ================= Body ================= */
+body{
+  margin:0;
+  font-family: Arial, sans-serif;
+  background:#0b1a33; /* Dark Blue Background */
+  color:#fff;
+}
+
+/* ================= Header ================= */
+.header{
+  display:flex;
+  justify-content:flex-end;
+  align-items:center;
+  padding:10px 20px;
+  background:#0b1a33;
+  box-shadow:0 2px 10px rgba(0,0,0,.5);
+}
+
+/* ================= User Icon ================= */
+.user-icon{
+  width:50px;
+  height:50px;
+  background:#ffc107; /* Accent color */
+  color:#000;
+  border-radius:50%;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  font-weight:bold;
+  font-size:22px;
+  cursor:pointer;
+  margin-left:15px;
+}
+
+/* ================= Logout Button ================= */
+.logout{
+  background:#dc3545;
+  color:#fff;
+  border:none;
+  padding:8px 12px;
+  border-radius:5px;
+  cursor:pointer;
+  font-size:14px;
+  margin-right:10px;
+}
+
+/* ================= Container ================= */
+.container{
+  max-width:1200px;
+  margin:auto;
+  padding:20px;
+}
+
+/* ================= Users Table/Card ================= */
+.user-list{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.user-card{
+  background:#1a2a4d;
+  padding:15px;
+  border-radius:8px;
+  cursor:pointer;
+  transition:0.2s;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.user-card:hover{
+  background:#264080;
+}
+.user-card b{
+  color:#ffc107;
+}
+
+/* ================= Modal ================= */
+.modal{
+  display:none; 
+  position:fixed; 
+  z-index:1000;
+  left:0;
+  top:0;
+  width:100%; 
+  height:100%; 
+  overflow:auto;
+  background-color:rgba(0,0,0,0.7);
+}
+.modal-content{
+  background:#1a2a4d;
+  margin:5% auto;
+  padding:20px;
+  border-radius:8px;
+  width:90%;
+  max-width:450px;
+}
+.modal-content h3{
+  margin-top:0;
+  color:#ffc107;
+}
+.modal-content p{
+  margin:5px 0;
+}
+.modal-content input, .modal-content textarea{
+  width:100%;
+  padding:8px;
+  margin:5px 0 10px 0;
+  border-radius:5px;
+  border:none;
+}
+.modal-content button{
+  background:#198754;
+  color:#fff;
+  padding:8px 12px;
+  border:none;
+  border-radius:5px;
+  cursor:pointer;
+}
+.close-btn{
+  background:#dc3545;
+  margin-left:10px;
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <button class="logout" onclick="logout()">Logout</button>
+  <div class="user-icon" id="userIcon">U</div>
+</div>
+
+<div class="container">
+  <h2>All Users</h2>
+  <div class="user-list" id="userList">Loading...</div>
+</div>
+
 <!-- Modal -->
 <div id="userModal" class="modal">
   <div class="modal-content">
@@ -8,32 +151,99 @@
     <p><b>Plan Days Left:</b> <span id="modalPlanDays">0</span></p>
     <textarea id="notificationText" placeholder="Enter message to send"></textarea>
     <div style="display:flex; justify-content:flex-end; gap:10px;">
-      <button id="sendBtn">Send</button>
-      <button id="closeBtn" class="close-btn">Close</button>
+      <button onclick="sendNotification()">Send</button>
+      <button class="close-btn" onclick="closeModal()">Close</button>
     </div>
   </div>
 </div>
 
-<script>
-// Modal elements
-const userModal = document.getElementById("userModal");
-const closeBtn = document.getElementById("closeBtn");
-const sendBtn = document.getElementById("sendBtn");
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
+import { getFirestore, collection, getDocs, doc, getDoc, addDoc, serverTimestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 
-// Close modal
-closeBtn.addEventListener("click", ()=>{
-  userModal.style.display = "none";
+/* Firebase Config */
+const firebaseConfig = {
+  apiKey: "AIzaSyBFsTzlRPoWHVXEHbKrPdwxslxZGa7Kqfw",
+  authDomain: "biniyog-95d00.firebaseapp.com",
+  projectId: "biniyog-95d00",
+  storageBucket: "biniyog-95d00.firebasestorage.app",
+  messagingSenderId: "523238228802",
+  appId: "1:523238228802:web:a65183bdc4c268f94efedb"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+/* Auth Check */
+onAuthStateChanged(auth, async(user)=>{
+  if(!user){
+    location.href = "admin-login.html";
+    return;
+  }
+  const uSnap = await getDoc(doc(db,"users",user.uid));
+  if(!uSnap.exists() || uSnap.data().role !== "admin"){
+    alert("Access denied");
+    await signOut(auth);
+    location.href = "admin-login.html";
+    return;
+  }
+  loadUsersRealtime();
 });
 
-// Send notification
-sendBtn.addEventListener("click", async()=>{
+/* Load Users with Realtime Balance */
+function loadUsersRealtime(){
+  const list = document.getElementById("userList");
+  list.innerHTML = "";
+  const usersCol = collection(db,"users");
+  onSnapshot(usersCol, snap=>{
+    list.innerHTML = "";
+    snap.forEach(docSnap=>{
+      const u = docSnap.data();
+      if(u.role === "admin") return; // skip admin
+      const card = document.createElement("div");
+      card.className = "user-card";
+      card.innerHTML = `<b>${u.name || "No Name"}</b> - ${u.phone || "N/A"} - ৳${u.balance || 0}`;
+      card.onclick = ()=>openModal(docSnap.id, u);
+      list.appendChild(card);
+    });
+  });
+}
+
+/* Modal Logic */
+let currentUserId = null;
+function openModal(uid, userData){
+  currentUserId = uid;
+  document.getElementById("modalUserName").innerText = userData.name || "No Name";
+  document.getElementById("modalUserPhone").innerText = userData.phone || "N/A";
+  document.getElementById("modalUserBalance").innerText = userData.balance || 0;
+  
+  // Current Plan
+  let planName = userData.planName || "None";
+  let daysLeft = 0;
+  if(userData.planEnd){
+    const end = userData.planEnd.toDate ? userData.planEnd.toDate() : new Date(userData.planEnd);
+    const now = new Date();
+    daysLeft = Math.ceil((end - now)/(1000*60*60*24));
+    if(daysLeft < 0) daysLeft = 0;
+  }
+  document.getElementById("modalUserPlan").innerText = planName;
+  document.getElementById("modalPlanDays").innerText = daysLeft;
+  
+  document.getElementById("notificationText").value = "";
+  document.getElementById("userModal").style.display = "block";
+}
+
+function closeModal(){
+  document.getElementById("userModal").style.display = "none";
+}
+
+/* Send Notification */
+async function sendNotification(){
   const msg = document.getElementById("notificationText").value.trim();
   if(!msg){
     alert("Enter a message");
-    return;
-  }
-  if(!currentUserId){
-    alert("User not selected");
     return;
   }
   await addDoc(collection(db,"notifications"),{
@@ -42,42 +252,18 @@ sendBtn.addEventListener("click", async()=>{
     createdAt: serverTimestamp()
   });
   alert("Notification sent!");
-  userModal.style.display = "none";
-});
-
-// Open modal (update plan fetch)
-function openModal(uid, userData){
-  currentUserId = uid;
-  document.getElementById("modalUserName").innerText = userData.name || "No Name";
-  document.getElementById("modalUserPhone").innerText = userData.phone || "N/A";
-  document.getElementById("modalUserBalance").innerText = userData.balance || 0;
-
-  // Fetch current plan from Firestore if exists
-  const userDocRef = doc(db,"users",uid);
-  getDoc(userDocRef).then(docSnap=>{
-    if(docSnap.exists()){
-      const data = docSnap.data();
-      const planName = data.planName || "None";
-      let daysLeft = 0;
-      if(data.planEnd){
-        const end = data.planEnd.toDate ? data.planEnd.toDate() : new Date(data.planEnd);
-        const now = new Date();
-        daysLeft = Math.ceil((end - now)/(1000*60*60*24));
-        if(daysLeft < 0) daysLeft = 0;
-      }
-      document.getElementById("modalUserPlan").innerText = planName;
-      document.getElementById("modalPlanDays").innerText = daysLeft;
-    }
-  });
-
-  document.getElementById("notificationText").value = "";
-  userModal.style.display = "block";
+  closeModal();
 }
 
-// Close modal on click outside
-window.addEventListener("click", (e)=>{
-  if(e.target == userModal){
-    userModal.style.display = "none";
-  }
+/* Logout */
+function logout(){
+  signOut(auth).then(()=> location.href="admin-login.html");
+}
+
+/* User Icon */
+document.getElementById("userIcon").addEventListener("click", ()=>{
+  alert("Already in Users page");
 });
 </script>
+</body>
+</html>
