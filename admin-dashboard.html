@@ -10,7 +10,8 @@ body{
   font-family: Arial, sans-serif;
   background:#f2f4f7;
 }
-/* হেডার */
+
+/* Header */
 .header{
   display:flex;
   justify-content:flex-end;
@@ -19,11 +20,12 @@ body{
   background:#198754; /* প্রিমিয়াম কালার */
   box-shadow:0 2px 8px rgba(0,0,0,.1);
 }
-/* ইউজার আইকন */
+
+/* User Icon */
 .user-icon{
   width:60px;
   height:60px;
-  background:#ffc107; /* প্রিমিয়াম অ্যাকসেন্ট কালার */
+  background:#ffc107; /* অ্যাকসেন্ট কালার */
   color:#000;
   border-radius:50%;
   display:flex;
@@ -34,7 +36,8 @@ body{
   cursor:pointer;
   margin-left:15px;
 }
-/* লগ আউট আইকন */
+
+/* Logout Button */
 .logout{
   background:#dc3545;
   color:#fff;
@@ -46,16 +49,18 @@ body{
   margin-right:10px;
 }
 
+/* Container */
 .container{
   max-width:1200px;
   margin:auto;
   padding:20px;
 }
-/* Dashboard cards */
+
+/* Dashboard Cards */
 .dashboard{
   display:flex;
   gap:20px;
-  flex-wrap:wrap; /* Desktop-এ পাশে, Mobile-এ stacked */
+  flex-wrap:wrap; /* Desktop-এ পাশাপাশি, Mobile-এ stacked */
 }
 .card{
   flex:1;
@@ -65,10 +70,15 @@ body{
   border-radius:8px;
   box-shadow:0 2px 8px rgba(0,0,0,.1);
   font-size:14px;
+  display:flex;
+  flex-direction:column;
+  max-height:calc(100vh - 150px);
+  overflow-y:auto;
 }
 .card h2{
   margin-top:0;
   font-size:16px;
+  margin-bottom:10px;
 }
 .item{
   border-bottom:1px solid #ddd;
@@ -96,11 +106,11 @@ button{
   .dashboard{
     flex-direction:column;
   }
+  .card{
+    max-height:none;
+  }
 }
-#depositList, #withdrawList{
-  max-height:500px;
-  overflow-y:auto;
-}
+
 </style>
 </head>
 <body>
@@ -142,7 +152,7 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-/* ================= AUTH CHECK ================= */
+/* AUTH CHECK */
 onAuthStateChanged(auth, async(user)=>{
   if(!user){
     location.href = "admin-login.html";
@@ -159,7 +169,7 @@ onAuthStateChanged(auth, async(user)=>{
   loadWithdraws();
 });
 
-/* ================= LOAD DEPOSITS ================= */
+/* LOAD DEPOSITS */
 async function loadDeposits(){
   const depositList = document.getElementById("depositList");
   depositList.innerHTML = "";
@@ -190,7 +200,7 @@ async function loadDeposits(){
   }
 }
 
-/* ================= LOAD WITHDRAWS ================= */
+/* LOAD WITHDRAWS */
 async function loadWithdraws(){
   const withdrawList = document.getElementById("withdrawList");
   withdrawList.innerHTML = "";
@@ -221,7 +231,7 @@ async function loadWithdraws(){
   }
 }
 
-/* ================= ACTIONS ================= */
+/* ACTIONS */
 window.approveDeposit = async(id)=>{
   const ref = doc(db,"deposits",id);
   const snap = await getDoc(ref);
@@ -266,14 +276,15 @@ window.rejectWithdraw = async(id)=>{
   loadWithdraws();
 };
 
-/* ================= LOGOUT ================= */
+/* LOGOUT */
 window.logout = async()=>{
   await signOut(auth);
   location.href = "admin-login.html";
 };
 
-/* ================= OPEN USERS PAGE ================= */
+/* OPEN USERS PAGE */
 function openUserPage(){
+  // নিশ্চিতভাবে একই folder-এ users.html থাকতে হবে
   window.location.href = "users.html";
 }
 </script>
