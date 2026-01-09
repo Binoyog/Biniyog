@@ -29,16 +29,20 @@ body{
   display:flex;
   gap:20px;
   flex-wrap: nowrap; /* কখনো stacked হবে না */
+  align-items: stretch; /* কার্ডের উচ্চতা সমান হবে */
 }
 .card{
   flex: 1;
+  display: flex;
+  flex-direction: column;
   background:#fff;
   padding:20px;
   border-radius:8px;
   box-shadow:0 2px 8px rgba(0,0,0,.1);
-  margin-bottom:20px;
 }
-h2{margin-top:0}
+.card h2{
+  margin-top:0;
+}
 .item{
   border-bottom:1px solid #ddd;
   padding:10px 0;
@@ -58,22 +62,29 @@ button{
 }
 .approve{background:#198754}
 .reject{background:#dc3545}
-small{color:#555}
+#depositList, #withdrawList{
+  overflow-y:auto;
+  max-height:600px;
+}
 </style>
 </head>
 <body>
+
 <div class="container">
-<button class="logout" onclick="logout()">Logout</button>
+  <button class="logout" onclick="logout()">Logout</button>
 
-<div class="dashboard">
-  <div class="card">
-    <h2>Pending Deposits</h2>
-    <div id="depositList">Loading...</div>
-  </div>
+  <div class="dashboard">
+    <!-- Deposits Card -->
+    <div class="card">
+      <h2>Pending Deposits</h2>
+      <div id="depositList">Loading...</div>
+    </div>
 
-  <div class="card">
-    <h2>Pending Withdraws</h2>
-    <div id="withdrawList">Loading...</div>
+    <!-- Withdraws Card -->
+    <div class="card">
+      <h2>Pending Withdraws</h2>
+      <div id="withdrawList">Loading...</div>
+    </div>
   </div>
 </div>
 
