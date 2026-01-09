@@ -10,46 +10,52 @@ body{
   font-family: Arial, sans-serif;
   background:#f2f4f7;
 }
+/* হেডার */
 .header{
   display:flex;
   justify-content:flex-end;
   align-items:center;
   padding:10px 20px;
-  background:#fff;
+  background:#198754; /* প্রিমিয়াম কালার */
   box-shadow:0 2px 8px rgba(0,0,0,.1);
 }
+/* ইউজার আইকন */
 .user-icon{
-  width:50px;
-  height:50px;
-  background:#198754;
-  color:#fff;
+  width:60px;
+  height:60px;
+  background:#ffc107; /* প্রিমিয়াম অ্যাকসেন্ট কালার */
+  color:#000;
   border-radius:50%;
   display:flex;
   justify-content:center;
   align-items:center;
   font-weight:bold;
-  font-size:20px;
+  font-size:24px;
   cursor:pointer;
   margin-left:15px;
 }
+/* লগ আউট আইকন */
 .logout{
   background:#dc3545;
   color:#fff;
   border:none;
-  padding:5px 10px;
+  padding:8px 12px;
   border-radius:5px;
   cursor:pointer;
   font-size:14px;
+  margin-right:10px;
 }
+
 .container{
   max-width:1200px;
   margin:auto;
   padding:20px;
 }
+/* Dashboard cards */
 .dashboard{
   display:flex;
   gap:20px;
-  flex-wrap:wrap; /* Desktop-এ পাশে থাকবে, Mobile-এ stacked হবে */
+  flex-wrap:wrap; /* Desktop-এ পাশে, Mobile-এ stacked */
 }
 .card{
   flex:1;
@@ -85,10 +91,10 @@ button{
 .approve{background:#198754}
 .reject{background:#dc3545}
 
-/* Mobile view stacked */
+/* Mobile stacked */
 @media(max-width:768px){
   .dashboard{
-    flex-direction:column; /* Mobile-এ stacked */
+    flex-direction:column;
   }
 }
 #depositList, #withdrawList{
@@ -260,14 +266,14 @@ window.rejectWithdraw = async(id)=>{
   loadWithdraws();
 };
 
+/* ================= LOGOUT ================= */
 window.logout = async()=>{
   await signOut(auth);
   location.href = "admin-login.html";
 };
 
-/* ================= OPEN USER PAGE ================= */
+/* ================= OPEN USERS PAGE ================= */
 function openUserPage(){
-  // নতুন পেজ খুলবে, তুমি পরে create করবে
   window.location.href = "users.html";
 }
 </script>
