@@ -3,122 +3,58 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Biniyog | Investment Plan</title>
+<title>Biniyog | My Plans</title>
 
 <style>
 body{
   margin:0;
   font-family:Arial, Helvetica, sans-serif;
-  background:#fdecec;
+  background:#f4f4f4;
 }
 .header{
   padding:16px;
   text-align:center;
   font-size:22px;
   font-weight:bold;
-}
-.plan{
   background:#b23a1e;
   color:#fff;
+}
+.plan{
+  background:#fff;
   margin:15px;
-  border-radius:18px;
-  padding:20px;
-  text-align:center;
+  border-radius:15px;
+  padding:16px;
+  box-shadow:0 4px 10px rgba(0,0,0,.1);
 }
-.plan h3{margin:5px 0}
-.plan p{margin:4px 0;font-size:15px}
-.buy{
-  margin-top:12px;
-  background:#facc15;
-  border:none;
-  padding:10px 26px;
-  border-radius:20px;
+.plan h3{margin:0 0 6px 0}
+.time{
+  font-size:16px;
   font-weight:bold;
-  cursor:pointer;
+  color:#b23a1e;
+  margin-top:8px;
 }
-.buy:disabled{
-  opacity:.6;
-  cursor:not-allowed;
+.status{
+  margin-top:6px;
+  font-size:14px;
+}
+.completed{
+  color:green;
+  font-weight:bold;
 }
 </style>
 </head>
 
 <body>
 
-<div class="header">ইনভেস্টমেন্ট প্লান</div>
+<div class="header">আমার প্লানসমূহ</div>
+<div id="plans"></div>
 
-<!-- 🔥 FLASH PLAN -->
-<div class="plan">
-  <h3>⚡ ফ্ল্যাশ প্লান (১০ মিনিট)</h3>
-  <p>৳397</p>
-  <p>১০ মিনিটে আয় ৳400</p>
-  <p>মেয়াদ: ১০ মিনিট</p>
-  <button class="buy"
-    data-type="flash"
-    data-name="Flash-10min"
-    data-price="397"
-    data-total="400"
-    data-minutes="10">
-    কিনুন
-  </button>
-</div>
-
-<!-- NORMAL PLANS -->
-<div class="plan">
-  <h3>মিনি প্লান</h3>
-  <p>৳500</p>
-  <p>২৪ঘন্টায় আয় ৳90</p>
-  <p>মেয়াদ: ১০ দিন</p>
-  <button class="buy" data-type="daily" data-name="Mini" data-price="500" data-daily="90" data-days="10">কিনুন</button>
-</div>
-
-<div class="plan">
-  <h3>উইডমিল প্লান</h3>
-  <p>৳1000</p>
-  <p>২৪ঘন্টায় আয় ৳197</p>
-  <p>মেয়াদ: ১০ দিন</p>
-  <button class="buy" data-type="daily" data-name="Windmill" data-price="1000" data-daily="197" data-days="10">কিনুন</button>
-</div>
-
-<div class="plan">
-  <h3>শেয়ার প্লান</h3>
-  <p>৳2000</p>
-  <p>২৪ঘন্টায় আয় ৳470</p>
-  <p>মেয়াদ: ১০ দিন</p>
-  <button class="buy" data-type="daily" data-name="Share-2000" data-price="2000" data-daily="470" data-days="10">কিনুন</button>
-</div>
-
-<div class="plan">
-  <h3>শেয়ার প্লান</h3>
-  <p>৳5000</p>
-  <p>২৪ঘন্টায় আয় ৳1280</p>
-  <p>মেয়াদ: ১০ দিন</p>
-  <button class="buy" data-type="daily" data-name="Share-5000" data-price="5000" data-daily="1280" data-days="10">কিনুন</button>
-</div>
-
-<div class="plan">
-  <h3>ন্যাশনাল প্লান</h3>
-  <p>৳20000</p>
-  <p>২৪ঘন্টায় আয় ৳5487</p>
-  <p>মেয়াদ: ৬ দিন</p>
-  <button class="buy" data-type="daily" data-name="National" data-price="20000" data-daily="5487" data-days="6">কিনুন</button>
-</div>
-
-<div class="plan">
-  <h3>মেগা প্লান</h3>
-  <p>৳50000</p>
-  <p>২৪ঘন্টায় আয় ৳13485</p>
-  <p>মেয়াদ: ৬ দিন</p>
-  <button class="buy" data-type="daily" data-name="Mega" data-price="50000" data-daily="13485" data-days="6">কিনুন</button>
-</div>
-
-<!-- FIREBASE -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
 import { getAuth,onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 import {
-  getFirestore,doc,getDoc,setDoc,updateDoc,
-  addDoc,collection,serverTimestamp,increment
+  getFirestore,collection,query,where,getDocs,
+  doc,updateDoc,increment
 } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 
 const app = initializeApp({
@@ -130,94 +66,80 @@ const app = initializeApp({
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-let uid=null;
-const buttons=document.querySelectorAll(".buy");
-buttons.forEach(b=>b.disabled=true);
+const plansDiv = document.getElementById("plans");
 
-onAuthStateChanged(auth,async(user)=>{
+onAuthStateChanged(auth, async(user)=>{
   if(!user){ location.href="index.html"; return; }
-  uid=user.uid;
 
-  const uref=doc(db,"users",uid);
-  const snap=await getDoc(uref);
-  if(!snap.exists()){
-    await setDoc(uref,{
-      uid,
-      role:"user",
-      balance:0,
-      createdAt:serverTimestamp()
-    });
-  }
-  buttons.forEach(b=>b.disabled=false);
-});
+  const q = query(
+    collection(db,"user_plans"),
+    where("uid","==",user.uid)
+  );
 
-buttons.forEach(btn=>{
-  btn.onclick=()=>buyPlan(btn);
-});
-
-async function buyPlan(btn){
- try{
-  btn.disabled=true;
-
-  const type = btn.dataset.type;
-  const planName = btn.dataset.name;
-  const price = Number(btn.dataset.price);
-
-  const uref = doc(db,"users",uid);
-  const snap = await getDoc(uref);
-  const balance = Number(snap.data().balance||0);
-
-  if(balance < price){
-    alert("❌ পর্যাপ্ত ব্যালেন্স নেই");
-    btn.disabled=false;
-    return;
-  }
-
-  // ✅ SAFE balance deduction
-  await updateDoc(uref,{
-    balance: increment(-price)
+  const snap = await getDocs(q);
+  snap.forEach(docSnap=>{
+    renderPlan(docSnap.id, docSnap.data(), user.uid);
   });
+});
 
-  let planData = {
-    uid,
-    planName,
-    price,
-    earned:0,
-    status:"running",
-    createdAt: serverTimestamp()
-  };
+function renderPlan(id, plan, uid){
+  const box = document.createElement("div");
+  box.className = "plan";
 
-  if(type === "flash"){
-    const total = Number(btn.dataset.total);
-    const min = Number(btn.dataset.minutes);
-    const now = Date.now();
+  box.innerHTML = `
+    <h3>${plan.planName}</h3>
+    <div class="status">স্ট্যাটাস: ${plan.status}</div>
+    <div class="time" id="time-${id}"></div>
+  `;
 
-    planData.type = "flash";
-    planData.totalEarn = total;
-    planData.startTime = now;
-    planData.endTime = now + min * 60 * 1000;
-    planData.profitAdded = false; // 🔒 important
+  plansDiv.appendChild(box);
+
+  if(plan.type === "flash"){
+    startFlashCountdown(id, plan, uid);
   }else{
-    const daily = Number(btn.dataset.daily);
-    const days = Number(btn.dataset.days);
-
-    planData.type = "daily";
-    planData.daily = daily;
-    planData.days = days;
-    planData.totalEarn = daily * days;
-    planData.endTime = Date.now() + days * 86400000;
+    showDailyTime(id, plan);
   }
+}
 
-  await addDoc(collection(db,"user_plans"), planData);
+/* 🔥 FLASH PLAN (SECOND COUNTDOWN + SAFE PROFIT) */
+function startFlashCountdown(planId, plan, uid){
+  const el = document.getElementById("time-"+planId);
+  const planRef = doc(db,"user_plans",planId);
+  const userRef = doc(db,"users",uid);
 
-  alert("✅ প্ল্যান সফলভাবে কেনা হয়েছে");
-  location.href="task.html";
+  const timer = setInterval(async()=>{
+    const now = Date.now();
+    let diff = plan.endTime - now;
 
- }catch(e){
-  console.error(e);
-  alert("⚠️ সমস্যা হয়েছে");
-  btn.disabled=false;
- }
+    if(diff <= 0){
+      clearInterval(timer);
+      el.innerHTML = "⏰ সময় শেষ";
+
+      if(!plan.profitAdded){
+        await updateDoc(userRef,{
+          balance: increment(plan.totalEarn)
+        });
+        await updateDoc(planRef,{
+          profitAdded:true,
+          status:"completed"
+        });
+        el.innerHTML = `<span class="completed">✅ আয় যোগ হয়েছে</span>`;
+      }
+      return;
+    }
+
+    const min = Math.floor(diff / 60000);
+    const sec = Math.floor((diff % 60000) / 1000);
+    el.innerText = `⏳ বাকি সময়: ${min} মিনিট ${sec} সেকেন্ড`;
+  },1000);
+}
+
+/* 📅 DAILY PLAN */
+function showDailyTime(id, plan){
+  const el = document.getElementById("time-"+id);
+  const diff = plan.endTime - Date.now();
+  const days = Math.max(0, Math.ceil(diff / 86400000));
+  el.innerText = `📅 বাকি দিন: ${days}`;
 }
 </script>
 
