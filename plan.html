@@ -4,46 +4,38 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Biniyog | My Plans</title>
-
 <style>
 body{
   margin:0;
   font-family:Arial, Helvetica, sans-serif;
-  background:#f4f4f4;
+  background:#fdecec;
 }
 .header{
   padding:16px;
   text-align:center;
   font-size:22px;
   font-weight:bold;
-  background:#b23a1e;
-  color:#fff;
 }
 .plan{
-  background:#fff;
+  background:#b23a1e;
+  color:#fff;
   margin:15px;
-  border-radius:15px;
-  padding:16px;
-  box-shadow:0 4px 10px rgba(0,0,0,.1);
+  border-radius:18px;
+  padding:20px;
 }
-.plan h3{margin:0 0 6px 0}
+.plan h3{margin:5px 0}
+.plan p{margin:6px 0;font-size:15px}
 .time{
-  font-size:16px;
-  font-weight:bold;
-  color:#b23a1e;
   margin-top:8px;
+  font-weight:bold;
+  font-size:16px;
 }
-.status{
-  margin-top:6px;
-  font-size:14px;
-}
-.completed{
-  color:green;
+.done{
+  color:#facc15;
   font-weight:bold;
 }
 </style>
 </head>
-
 <body>
 
 <div class="header">আমার প্লানসমূহ</div>
@@ -52,9 +44,9 @@ body{
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
 import { getAuth,onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
-import {
+import { 
   getFirestore,collection,query,where,getDocs,
-  doc,updateDoc,increment
+  doc,updateDoc,increment 
 } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 
 const app = initializeApp({
@@ -69,61 +61,55 @@ const db = getFirestore(app);
 const plansDiv = document.getElementById("plans");
 
 onAuthStateChanged(auth, async(user)=>{
-  if(!user){ location.href="index.html"; return; }
+  if(!user){
+    location.href="index.html";
+    return;
+  }
 
-  const q = query(
-    collection(db,"user_plans"),
-    where("uid","==",user.uid)
-  );
-
+  const q = query(collection(db,"user_plans"), where("uid","==",user.uid));
   const snap = await getDocs(q);
-  snap.forEach(docSnap=>{
-    renderPlan(docSnap.id, docSnap.data(), user.uid);
+
+  snap.forEach(docSnap => {
+    const data = docSnap.data();
+    renderPlan(docSnap.id, data, user.uid);
   });
 });
 
 function renderPlan(id, plan, uid){
-  const box = document.createElement("div");
-  box.className = "plan";
-
-  box.innerHTML = `
+  const div = document.createElement("div");
+  div.className = "plan";
+  div.innerHTML = `
     <h3>${plan.planName}</h3>
-    <div class="status">স্ট্যাটাস: ${plan.status}</div>
+    <p>স্ট্যাটাস: ${plan.status}</p>
     <div class="time" id="time-${id}"></div>
   `;
-
-  plansDiv.appendChild(box);
+  plansDiv.appendChild(div);
 
   if(plan.type === "flash"){
-    startFlashCountdown(id, plan, uid);
+    flashTimer(id, plan, uid);
   }else{
-    showDailyTime(id, plan);
+    dailyTimer(id, plan, uid);
   }
 }
 
-/* 🔥 FLASH PLAN (SECOND COUNTDOWN + SAFE PROFIT) */
-function startFlashCountdown(planId, plan, uid){
-  const el = document.getElementById("time-"+planId);
-  const planRef = doc(db,"user_plans",planId);
+/* 🔥 FLASH PLAN REAL-TIME SECOND COUNTDOWN */
+function flashTimer(pid, plan, uid){
+  const el = document.getElementById("time-"+pid);
+  const planRef = doc(db,"user_plans",pid);
   const userRef = doc(db,"users",uid);
 
   const timer = setInterval(async()=>{
     const now = Date.now();
-    let diff = plan.endTime - now;
+    let diff = plan.endAt - now;
 
     if(diff <= 0){
       clearInterval(timer);
       el.innerHTML = "⏰ সময় শেষ";
 
       if(!plan.profitAdded){
-        await updateDoc(userRef,{
-          balance: increment(plan.totalEarn)
-        });
-        await updateDoc(planRef,{
-          profitAdded:true,
-          status:"completed"
-        });
-        el.innerHTML = `<span class="completed">✅ আয় যোগ হয়েছে</span>`;
+        await updateDoc(userRef, { balance: increment(plan.totalEarn) });
+        await updateDoc(planRef, { profitAdded:true, status:"completed" });
+        el.innerHTML = `<span class="done">✅ আয় যোগ হয়েছে</span>`;
       }
       return;
     }
@@ -134,12 +120,35 @@ function startFlashCountdown(planId, plan, uid){
   },1000);
 }
 
-/* 📅 DAILY PLAN */
-function showDailyTime(id, plan){
-  const el = document.getElementById("time-"+id);
-  const diff = plan.endTime - Date.now();
-  const days = Math.max(0, Math.ceil(diff / 86400000));
-  el.innerText = `📅 বাকি দিন: ${days}`;
+/* 📅 DAILY PLAN - Countdown in days (optional seconds can be added similarly) */
+function dailyTimer(pid, plan, uid){
+  const el = document.getElementById("time-"+pid);
+  const planRef = doc(db,"user_plans",pid);
+  const userRef = doc(db,"users",uid);
+
+  const timer = setInterval(async()=>{
+    const now = Date.now();
+    let diff = plan.endAt - now;
+
+    if(diff <= 0){
+      clearInterval(timer);
+      el.innerHTML = "⏰ সময় শেষ";
+
+      if(!plan.profitAdded){
+        await updateDoc(userRef, { balance: increment(plan.totalEarn) });
+        await updateDoc(planRef, { profitAdded:true, status:"completed" });
+        el.innerHTML = `<span class="done">✅ আয় যোগ হয়েছে</span>`;
+      }
+      return;
+    }
+
+    const days = Math.floor(diff / 86400000);
+    const hours = Math.floor((diff % 86400000) / 3600000);
+    const minutes = Math.floor((diff % 3600000) / 60000);
+    const seconds = Math.floor((diff % 60000) / 1000);
+
+    el.innerText = `⏳ বাকি সময়: ${days} দিন ${hours} ঘন্টা ${minutes} মিনিট ${seconds} সেকেন্ড`;
+  },1000);
 }
 </script>
 
