@@ -118,7 +118,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebas
 import { getAuth,onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 import {
   getFirestore,doc,getDoc,setDoc,updateDoc,
-  addDoc,collection,serverTimestamp
+  addDoc,collection,serverTimestamp,increment
 } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 
 const app = initializeApp({
@@ -137,11 +137,15 @@ buttons.forEach(b=>b.disabled=true);
 onAuthStateChanged(auth,async(user)=>{
   if(!user){ location.href="index.html"; return; }
   uid=user.uid;
+
   const uref=doc(db,"users",uid);
   const snap=await getDoc(uref);
   if(!snap.exists()){
     await setDoc(uref,{
-      uid,role:"user",balance:0,createdAt:serverTimestamp()
+      uid,
+      role:"user",
+      balance:0,
+      createdAt:serverTimestamp()
     });
   }
   buttons.forEach(b=>b.disabled=false);
@@ -169,7 +173,10 @@ async function buyPlan(btn){
     return;
   }
 
-  await updateDoc(uref,{ balance: balance - price });
+  // ✅ SAFE balance deduction
+  await updateDoc(uref,{
+    balance: increment(-price)
+  });
 
   let planData = {
     uid,
@@ -177,23 +184,28 @@ async function buyPlan(btn){
     price,
     earned:0,
     status:"running",
-    startAt: serverTimestamp()
+    createdAt: serverTimestamp()
   };
 
   if(type === "flash"){
     const total = Number(btn.dataset.total);
     const min = Number(btn.dataset.minutes);
+    const now = Date.now();
+
     planData.type = "flash";
     planData.totalEarn = total;
-    planData.endAt = Date.now() + min*60*1000;
+    planData.startTime = now;
+    planData.endTime = now + min * 60 * 1000;
+    planData.profitAdded = false; // 🔒 important
   }else{
     const daily = Number(btn.dataset.daily);
     const days = Number(btn.dataset.days);
+
     planData.type = "daily";
     planData.daily = daily;
     planData.days = days;
     planData.totalEarn = daily * days;
-    planData.endAt = Date.now() + days*86400000;
+    planData.endTime = Date.now() + days * 86400000;
   }
 
   await addDoc(collection(db,"user_plans"), planData);
