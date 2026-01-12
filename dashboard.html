@@ -23,6 +23,7 @@ body{
   display:flex;
   align-items:center;
   gap:8px;
+  cursor:pointer;
 }
 .header .balance{
   background:#fff;
@@ -70,12 +71,16 @@ body{
 <body>
 
 <div class="header">
-  <div class="left"><strong>👤 Profile</strong></div>
+  <!-- ✅ Profile → Lucky Bet -->
+  <div class="left" onclick="location.href='lucky-bet.html'">
+    <strong>🎯 Lucky Bet</strong>
+  </div>
+
   <div class="balance" id="balanceBtn">Tap To Balance</div>
   <div class="logout" id="logoutBtn">⎋</div>
 </div>
 
-<div class="notice">      ইন্টারন্যাশনাল বিনিয়োগ প্ল্যাটফর্ম</div>
+<div class="notice">ইন্টারন্যাশনাল বিনিয়োগ প্ল্যাটফর্ম</div>
 
 <div class="menu">
   <a href="task.html">📋<span>Task</span></a>
@@ -129,7 +134,6 @@ onAuthStateChanged(auth, async (user)=>{
   const userRef = doc(db,"users",user.uid);
   const snap = await getDoc(userRef);
 
-  /* ✅ create user ONLY if not exists */
   if(!snap.exists()){
     await setDoc(userRef,{
       uid: user.uid,
@@ -140,7 +144,6 @@ onAuthStateChanged(auth, async (user)=>{
     });
   }
 
-  /* 🔥 realtime balance listener */
   onSnapshot(userRef, (docSnap)=>{
     if(docSnap.exists()){
       liveBalance = docSnap.data().balance || 0;
