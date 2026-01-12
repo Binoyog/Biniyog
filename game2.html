@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lucky Bet | Live Dice Roll</title>
+<style>
+body {
+    margin:0;
+    font-family: Arial, sans-serif;
+    background:#121212;
+    color:#fff;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:30px;
+}
+.header {
+    font-size:28px;
+    font-weight:bold;
+    margin-bottom:20px;
+    color:#e91e63;
+    text-align:center;
+}
+.balance {
+    font-size:22px;
+    margin-bottom:20px;
+    color:#4caf50;
+}
+.amount-container {
+    display:flex;
+    gap:10px;
+    margin-bottom:20px;
+}
+.amount-container input {
+    width:80px;
+    padding:6px;
+    font-size:16px;
+    border-radius:6px;
+    border:none;
+    text-align:center;
+}
+.dice img {
+    width:150px;
+    height:150px;
+    margin-bottom:20px;
+}
+.buttons {
+    display:flex;
+    gap:20px;
+    margin-bottom:20px;
+}
+.buttons button {
+    padding:12px 24px;
+    font-size:16px;
+    font-weight:bold;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+    background:#e91e63;
+    color:#fff;
+}
+.buttons button:hover {
+    background:#ff4081;
+}
+.result {
+    font-size:20px;
+    margin-bottom:20px;
+    min-height:28px;
+    text-align:center;
+}
+.history{
+    margin-top:20px;
+    font-size:16px;
+    width:90%;
+    max-width:400px;
+}
+.history ul{
+    list-style:none;
+    padding-left:0;
+}
+.history li{
+    background:#1f1f2f;
+    margin-bottom:6px;
+    padding:6px 10px;
+    border-radius:6px;
+    display:flex;
+    justify-content:space-between;
+}
+</style>
+</head>
+<body>
+
+<div class="header">🎲 Lucky Bet | Live Dice Roll</div>
+<div class="balance" id="balance">Balance: ৳1000</div>
+
+<div class="amount-container">
+    <label>Bet ৳</label>
+    <input type="number" id="betAmount" value="50" min="10">
+</div>
+
+<div class="dice">
+    <img id="diceImg" src="https://i.ibb.co/9Yk2GR6/dice1.png" alt="Dice">
+</div>
+
+<div class="buttons">
+    <button onclick="rollDice()">Roll Dice</button>
+</div>
+
+<div class="result" id="result"></div>
+
+<div class="history">
+    <strong>Recent Rolls:</strong>
+    <ul id="historyList"></ul>
+</div>
+
+<!-- Firebase -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc, updateDoc, serverTimestamp, onSnapshot, arrayUnion } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
+
+/* Firebase config */
+const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_AUTH_DOMAIN",
+    projectId: "YOUR_PROJECT_ID"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+
+/* DOM */
+const balanceDisplay = document.getElementById('balance');
+const diceImg = document.getElementById('diceImg');
+const resultDiv = document.getElementById('result');
+const historyList = document.getElementById('historyList');
+const betInput = document.getElementById('betAmount');
+
+let userData = null;
+
+/* Auth */
+onAuthStateChanged(auth, async (user)=>{
+    if(!user){
+        location.href="index.html";
+        return;
+    }
+    const userRef = doc(db,"users",user.uid);
+    const snap = await getDoc(userRef);
+    if(!snap.exists()){
+        await setDoc(userRef,{
+            uid:user.uid,
+            phone:user.phoneNumber||"",
+            balance:1000,
+            createdAt:serverTimestamp()
+        });
+    }
+    // realtime balance
+    onSnapshot(userRef, (docSnap)=>{
+        userData = docSnap.data();
+        balanceDisplay.innerText = "Balance: ৳"+userData.balance;
+    });
+});
+
+/* Dice roll images */
+const diceImages = [
+    "https://i.ibb.co/9Yk2GR6/dice1.png",
+    "https://i.ibb.co/T1r0sL0/dice2.png",
+    "https://i.ibb.co/3cH1W3d/dice3.png",
+    "https://i.ibb.co/7Qx6Q5G/dice4.png",
+    "https://i.ibb.co/Y0J6W7d/dice5.png",
+    "https://i.ibb.co/bR3Rn7b/dice6.png"
+];
+
+/* Roll Dice */
+async function rollDice(){
+    if(!userData) return;
+    let bet = parseInt(betInput.value);
+    if(isNaN(bet) || bet <=0 || bet > userData.balance){
+        alert("Invalid bet amount!");
+        return;
+    }
+
+    // Animate dice
+    let randomIndex = Math.floor(Math.random()*6);
+    diceImg.src = diceImages[randomIndex];
+
+    // weighted outcome: 1-3 lose, 4-6 win
+    const outcomeIndex = Math.random() < 0.5 ? Math.floor(Math.random()*3) : 3+Math.floor(Math.random()*3);
+    diceImg.src = diceImages[outcomeIndex];
+
+    let won = outcomeIndex >=3;
+    const newBalance = userData.balance + (won ? bet : -bet);
+
+    resultDiv.innerText = won ? `🎉 You Won! +৳${bet}` : `😞 You Lost! -৳${bet}`;
+
+    // update Firestore
+    const userRef = doc(db,"users",userData.uid);
+    await updateDoc(userRef,{balance:newBalance});
+
+    // Add to history
+    const gameRef = doc(db,"diceGame","history");
+    await updateDoc(gameRef,{
+        rolls: arrayUnion({
+            uid:userData.uid,
+            outcome: outcomeIndex+1,
+            bet: bet,
+            won: won,
+            createdAt: serverTimestamp()
+        })
+    });
+}
+
+/* Live history */
+const gameRef = doc(db,"diceGame","history");
+onSnapshot(gameRef,(docSnap)=>{
+    const data = docSnap.data();
+    historyList.innerHTML="";
+    if(data && data.rolls){
+        const recent = data.rolls.slice(-8).reverse();
+        recent.forEach(r=>{
+            const li = document.createElement("li");
+            li.innerHTML = `<span>Dice: ${r.outcome}</span><span>${r.won ? "🎉 WIN" : "😞 LOSE"} (৳${r.bet})</span>`;
+            historyList.appendChild(li);
+        });
+    }
+});
+</script>
+
+</body>
+</html>
