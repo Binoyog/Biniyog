@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aviator | Lucky Bet</title>
+<style>
+body {
+  margin:0;
+  font-family: 'Arial', sans-serif;
+  background: #1e1e2f; /* dark theme background */
+  color: #fff;
+}
+.header {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:14px 16px;
+  background: linear-gradient(90deg, #d81b60, #f50057); /* primary gradient */
+  box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+}
+.header .title { font-weight:bold; font-size:18px; }
+.header .balance {
+  background:#fff;
+  color:#d81b60;
+  padding:6px 16px;
+  border-radius:24px;
+  font-weight:bold;
+  font-size:14px;
+  cursor:pointer;
+  box-shadow:0 2px 6px rgba(0,0,0,0.3);
+}
+.main {
+  padding:12px;
+}
+.flight-area {
+  position:relative;
+  background:#2c2c3f; /* dark flight background */
+  height:320px;
+  border-radius:14px;
+  overflow:hidden;
+  margin-bottom:12px;
+  box-shadow:0 4px 10px rgba(0,0,0,0.5);
+}
+.plane {
+  position:absolute;
+  width:60px;
+  height:auto;
+  bottom:0;
+  left:0;
+  transform-origin:center bottom;
+}
+.multiplier-display {
+  position:absolute;
+  font-weight:bold;
+  color:#ffeb3b; /* bright yellow for multiplier */
+  font-size:18px;
+  text-shadow:1px 1px #000;
+}
+.crash-img {
+  position:absolute;
+  width:100%;
+  height:100%;
+  top:0;
+  left:0;
+  display:none;
+  background:url('https://i.ibb.co/ZK1pT1y/crash.png') center center no-repeat;
+  background-size:contain;
+}
+.crash-text {
+  position:absolute;
+  top:40%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  font-size:28px;
+  font-weight:bold;
+  color:#ff3d00;
+  display:none;
+  text-shadow:2px 2px #000;
+}
+.users {
+  font-size:14px;
+  color:#ccc;
+  margin-bottom:12px;
+}
+.graph {
+  height:160px;
+  background:#1b1b2b;
+  border-radius:12px;
+  padding:6px;
+  margin-bottom:12px;
+  position:relative;
+  overflow:hidden;
+  box-shadow:0 2px 8px rgba(0,0,0,0.4);
+}
+.graph canvas {
+  width:100%;
+  height:100%;
+}
+.bet-display {
+  margin-bottom:12px;
+  font-size:14px;
+}
+.controls {
+  display:flex;
+  gap:12px;
+  margin-bottom:12px;
+  flex-wrap:wrap;
+}
+.controls input {
+  padding:8px;
+  width:120px;
+  border-radius:8px;
+  border:none;
+  background:#33334d;
+  color:#fff;
+}
+.controls button {
+  padding:8px 16px;
+  background: #d81b60;
+  color:#fff;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+  font-weight:bold;
+}
+.floating-bet {
+  position:absolute;
+  font-size:12px;
+  font-weight:bold;
+  color:#00e676;
+  pointer-events:none;
+  opacity:0.9;
+  animation:floatUp 3s linear forwards;
+}
+@keyframes floatUp { 0%{transform:translateY(0);} 100%{transform:translateY(-150px);opacity:0;} }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="title">🎯 Aviator</div>
+  <div class="balance" id="balanceBtn">৳ 0</div>
+</div>
+
+<div class="main">
+  <div class="users" id="usersCount">Active Users: 1023</div>
+  <div class="flight-area" id="flightArea">
+    <img src="https://i.ibb.co/wd5RGSP/aviator.png" class="plane" id="plane" alt="Plane">
+    <div class="multiplier-display" id="multiplierDisplay">x1.00</div>
+    <div class="crash-img" id="crashImg"></div>
+    <div class="crash-text" id="crashText"></div>
+  </div>
+  <div class="graph">
+    <canvas id="graphCanvas"></canvas>
+  </div>
+  <div class="bet-display" id="betsDisplay">Active Bets: None</div>
+  <div class="controls">
+    <input type="number" id="betAmount" placeholder="Enter Bet">
+    <button id="placeBet">Place Bet</button>
+    <button id="cashOut">Cash Out</button>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
+import { getFirestore, doc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+
+/* Firebase Config */
+const firebaseConfig = {
+  apiKey: "AIzaSyBFsTzlRPoWHVXEHbKrPdwxslxZGa7Kqfw",
+  authDomain: "biniyog-95d00.firebaseapp.com",
+  projectId: "biniyog-95d00"
+};
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+/* Elements */
+const balanceBtn = document.getElementById('balanceBtn');
+const plane = document.getElementById('plane');
+const multiplierDisplay = document.getElementById('multiplierDisplay');
+const usersCountEl = document.getElementById('usersCount');
+const betAmountInput = document.getElementById('betAmount');
+const betsDisplay = document.getElementById('betsDisplay');
+const crashImg = document.getElementById('crashImg');
+const crashText = document.getElementById('crashText');
+const flightArea = document.getElementById('flightArea');
+const canvas = document.getElementById('graphCanvas');
+const ctx = canvas.getContext('2d');
+
+let balance=0, activeBets=[], multiplier=1, flightX=0, flightY=0, crashPoint=3+Math.random()*5, graphData=[];
+
+// Responsive canvas
+canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight;
+
+// Firebase Auth + balance
+onAuthStateChanged(auth,user=>{
+  if(!user){ location.href="index.html"; return; }
+  const userRef = doc(db,"users",user.uid);
+  onSnapshot(userRef,(docSnap)=>{
+    if(docSnap.exists()){ balance=docSnap.data().balance||0; balanceBtn.innerText=`৳ ${balance}`; }
+  });
+});
+
+// Active users simulation
+setInterval(()=>{ usersCountEl.innerText=`Active Users: ${1000+Math.floor(Math.random()*50)}`; },3000);
+
+// Bezier curve
+function bezierFlight(x){ return -0.0007*(x-150)*(x-150)+150; }
+
+// Start flight
+function startFlight(){
+  flightX=0; multiplier=1; crashPoint=3+Math.random()*5; activeBets=[]; betsDisplay.innerText="Active Bets: None";
+  crashImg.style.display="none"; crashText.style.display="none"; graphData=[]; ctx.clearRect(0,0,canvas.width,canvas.height);
+  requestAnimationFrame(animateFlight);
+}
+
+// Animate flight using requestAnimationFrame
+function animateFlight(){
+  flightX+=2; multiplier+=0.015;
+  flightY=bezierFlight(flightX);
+  plane.style.transform=`translate(${flightX}px,${flightY}px) rotate(${multiplier*5}deg)`;
+  multiplierDisplay.style.left=`${flightX+50}px`; multiplierDisplay.style.top=`${flightY-30}px`;
+  multiplierDisplay.innerText=`x${multiplier.toFixed(2)}`;
+
+  graphData.push(multiplier); drawGraph();
+  
+  if(multiplier >= crashPoint){
+    crashImg.style.display="block"; crashText.innerText=`💥 Crashed at x${crashPoint.toFixed(2)}x`; crashText.style.display="block";
+    activeBets=[]; updateBetsDisplay();
+    setTimeout(startFlight,2000);
+  } else requestAnimationFrame(animateFlight);
+}
+
+// Graph
+function drawGraph(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  if(graphData.length===0) return;
+  ctx.beginPath(); ctx.moveTo(0,canvas.height-graphData[0]*20);
+  for(let i=1;i<graphData.length;i++){
+    let x=i*(canvas.width/100), y=canvas.height-graphData[i]*20;
+    ctx.lineTo(x,y);
+  }
+  ctx.strokeStyle="#ff4081"; ctx.lineWidth=2; ctx.stroke();
+}
+
+// Place Bet
+document.getElementById('placeBet').onclick=()=>{
+  const amount=parseInt(betAmountInput.value);
+  if(amount>0 && amount<=balance){
+    activeBets.push({amount,multiplier});
+    balance-=amount; balanceBtn.innerText=`৳ ${balance}`;
+    const userRef = doc(db,"users",auth.currentUser.uid); updateDoc(userRef,{balance});
+
+    const floatBet=document.createElement('div');
+    floatBet.className='floating-bet'; floatBet.innerText=`৳${amount}`;
+    floatBet.style.left=Math.random()*80+'%'; flightArea.appendChild(floatBet);
+    setTimeout(()=>flightArea.removeChild(floatBet),3000);
+    updateBetsDisplay();
+  } else alert('Invalid Bet');
+}
+
+// Cash Out
+document.getElementById('cashOut').onclick=()=>{
+  if(activeBets.length>0){
+    let totalWin=0; activeBets.forEach(b=>{ totalWin+=Math.floor(b.amount*multiplier); });
+    balance+=totalWin; balanceBtn.innerText=`৳ ${balance}`;
+    const userRef = doc(db,"users",auth.currentUser.uid); updateDoc(userRef,{balance});
+    activeBets=[]; updateBetsDisplay();
+  } else alert('No Active Bet');
+}
+
+function updateBetsDisplay(){
+  betsDisplay.innerText = activeBets.length===0 ? "Active Bets: None" : "Active Bets: "+activeBets.map(b=>`৳${b.amount}`).join(", ");
+}
+
+startFlight();
+</script>
+
+</body>
+</html>
