@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aviator | Lucky Bet</title>
+<style>
+body{
+  margin:0;
+  font-family:Arial, Helvetica, sans-serif;
+  background:#f2f2f2;
+}
+.header{
+  background:#d81b60;
+  color:#fff;
+  padding:12px 16px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.header .title{font-weight:bold;font-size:16px;}
+.header .balance{background:#fff;color:#d81b60;padding:4px 12px;border-radius:20px;font-size:14px;cursor:pointer;}
+.main{
+  padding:12px;
+}
+.flight-area{
+  position:relative;
+  background:#e0f7fa;
+  height:300px;
+  border-radius:12px;
+  overflow:hidden;
+  margin-bottom:12px;
+}
+.plane{
+  position:absolute;
+  bottom:0;
+  left:0;
+  width:50px;
+  transition: transform 0.1s linear;
+}
+.controls{
+  display:flex;
+  gap:12px;
+  margin-bottom:12px;
+}
+.controls input{
+  padding:6px;
+  width:100px;
+}
+.controls button{
+  padding:6px 12px;
+  background:#d81b60;
+  color:#fff;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
+}
+.users{
+  font-size:14px;
+  color:#555;
+  margin-bottom:12px;
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="title">🎯 Aviator</div>
+  <div class="balance" id="balanceBtn">৳ 1000</div>
+</div>
+
+<div class="main">
+  <div class="users" id="usersCount">Active Users: 1023</div>
+  <div class="flight-area" id="flightArea">
+    <img src="https://i.ibb.co/wd5RGSP/aviator.png" class="plane" id="plane" alt="Plane">
+  </div>
+  <div class="controls">
+    <input type="number" id="betAmount" placeholder="Enter Bet">
+    <button id="placeBet">Place Bet</button>
+    <button id="cashOut">Cash Out</button>
+  </div>
+</div>
+
+<script>
+// Balance
+let balance = 1000;
+const balanceBtn = document.getElementById('balanceBtn');
+const plane = document.getElementById('plane');
+let flightY = 0; // plane bottom
+let multiplier = 1.0;
+let betPlaced = 0;
+let interval;
+
+// Active Users Simulation
+const usersCountEl = document.getElementById('usersCount');
+setInterval(()=>{
+  const users = 1000 + Math.floor(Math.random()*50);
+  usersCountEl.innerText = `Active Users: ${users}`;
+}, 3000);
+
+// Flight Animation
+function startFlight(){
+  flightY = 0;
+  multiplier = 1.0;
+  interval = setInterval(()=>{
+    flightY += 1 + multiplier/5;
+    multiplier += 0.01;
+    plane.style.transform = `translateY(-${flightY}px) rotate(${multiplier*5}deg)`;
+    if(multiplier > 5){
+      clearInterval(interval);
+      alert('Flight crashed!');
+      flightY = 0;
+      multiplier = 1.0;
+      plane.style.transform = `translateY(0) rotate(0deg)`;
+      betPlaced = 0;
+    }
+  },50);
+}
+
+// Start flight immediately
+startFlight();
+
+// Place Bet
+document.getElementById('placeBet').onclick = ()=>{
+  const betInput = document.getElementById('betAmount');
+  const amount = parseInt(betInput.value);
+  if(amount > 0 && amount <= balance){
+    betPlaced = amount;
+    balance -= amount;
+    balanceBtn.innerText = `৳ ${balance}`;
+    alert(`Bet placed: ৳ ${amount}`);
+  } else {
+    alert('Invalid bet!');
+  }
+}
+
+// Cash Out
+document.getElementById('cashOut').onclick = ()=>{
+  if(betPlaced > 0){
+    const winAmount = Math.floor(betPlaced * multiplier);
+    balance += winAmount;
+    balanceBtn.innerText = `৳ ${balance}`;
+    alert(`Cashed out: ৳ ${winAmount}`);
+    betPlaced = 0;
+  } else {
+    alert('No active bet!');
+  }
+}
+
+</script>
+
+</body>
+</html>
