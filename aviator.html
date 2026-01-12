@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Final Real Aviator Game</title>
+<style>
+body {margin:0;font-family:Arial,sans-serif;background:#121212;color:#fff;}
+.header {display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:#1f1f1f;}
+.header .title {font-size:22px;font-weight:bold;color:#e91e63;}
+.header .balance,.header .liveUsers {font-size:18px;color:#4caf50;}
+.container {padding:16px;}
+#gameCanvas {width:100%;height:320px;background:#1a1a1a;border-radius:12px;position:relative;overflow:hidden;margin-bottom:16px;}
+#plane {width:50px;position:absolute;bottom:0;left:50px;transition:bottom 0.03s linear;}
+#multiplier {position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:48px;font-weight:bold;color:#fff;pointer-events:none;}
+.bets {display:flex;gap:8px;margin-bottom:16px;}
+.bet {flex:1;background:#1f1f1f;padding:12px;border-radius:8px;display:flex;align-items:center;}
+.bet input {flex:1;padding:8px;border-radius:4px;border:none;margin-right:6px;}
+.bet button {padding:8px 16px;border:none;border-radius:6px;background:#4caf50;color:#fff;cursor:pointer;}
+.liveBets {background:#1f1f1f;padding:12px;border-radius:8px;max-height:200px;overflow-y:auto;}
+.liveBets h3 {margin-top:0;margin-bottom:8px;font-size:16px;color:#e91e63;}
+.liveBets ul {list-style:none;padding-left:0;margin:0;}
+.liveBets li {padding:4px 0;border-bottom:1px solid #2a2a2a;display:flex;justify-content:space-between;}
+.multiplierGraph {position:absolute;bottom:0;left:0;width:100%;height:100%;pointer-events:none;}
+</style>
+</head>
+<body>
+
+<div class="header">
+    <div class="title">Aviator Game</div>
+    <div class="balance" id="balance">Balance: $0.00</div>
+    <div class="liveUsers" id="liveUsers">Users: 0</div>
+</div>
+
+<div class="container">
+    <div id="gameCanvas">
+        <canvas class="multiplierGraph" id="graphCanvas"></canvas>
+        <div id="multiplier">1.00x</div>
+        <img src="https://i.ibb.co/wd5RGSP/aviator.png" id="plane" alt="Plane">
+    </div>
+
+    <div class="bets">
+        <div class="bet">
+            <input type="number" id="betAmount" placeholder="0.00 USD">
+            <button onclick="placeBet()">Bet</button>
+        </div>
+    </div>
+
+    <div class="liveBets">
+        <h3>Live Bets:</h3>
+        <ul id="liveBetsList"></ul>
+    </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
+import { getFirestore, doc, onSnapshot, setDoc, collection, addDoc, serverTimestamp, getDoc } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+
+/* Firebase config */
+const firebaseConfig = {
+    apiKey:"YOUR_API_KEY",
+    authDomain:"YOUR_AUTH_DOMAIN",
+    projectId:"YOUR_PROJECT_ID"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+let userUid, liveBalance=0;
+
+/* Auth check */
+onAuthStateChanged(auth, async (user)=>{
+    if(!user) location.href="index.html";
+    userUid = user.uid;
+    const userRef = doc(db,"users",userUid);
+    const snap = await getDoc(userRef);
+    if(!snap.exists()){
+        await setDoc(userRef,{
+            uid:userUid,
+            phone:user.phoneNumber||"",
+            balance:1000,
+            createdAt:serverTimestamp()
+        });
+    }
+    onSnapshot(userRef, docSnap=>{
+        if(docSnap.exists()){
+            liveBalance = docSnap.data().balance || 0;
+            document.getElementById("balance").innerText = "Balance: $"+liveBalance.toFixed(2);
+        }
+    });
+});
+
+/* Place Bet */
+async function placeBet(){
+    const amount = parseFloat(document.getElementById("betAmount").value);
+    if(amount<=0 || amount>liveBalance) return alert("Invalid bet");
+    const betRef = collection(db,"bets");
+    await addDoc(betRef,{
+        uid:userUid,
+        amount,
+        timestamp:serverTimestamp(),
+        cashedOut:false
+    });
+    document.getElementById("betAmount").value="";
+}
+
+/* Live bets & users count */
+const liveBetsList = document.getElementById("liveBetsList");
+const liveUsersDisplay = document.getElementById("liveUsers");
+
+onSnapshot(collection(db,"bets"), snapshot=>{
+    liveBetsList.innerHTML="";
+    const users = new Set();
+    snapshot.forEach(doc=>{
+        users.add(doc.data().uid);
+        const li = document.createElement("li");
+        li.innerHTML = `<span>${doc.data().uid.substring(0,6)}</span> <span>$${doc.data().amount}</span>`;
+        liveBetsList.appendChild(li);
+    });
+    liveUsersDisplay.innerText = `Users: ${users.size}`;
+});
+
+/* Plane flight simulation + graph + crash + auto cashout */
+const plane = document.getElementById("plane");
+const multiplierDisplay = document.getElementById("multiplier");
+const graphCanvas = document.getElementById("graphCanvas");
+const ctx = graphCanvas.getContext('2d');
+graphCanvas.width = graphCanvas.offsetWidth;
+graphCanvas.height = graphCanvas.offsetHeight;
+
+let multiplier=1, crashed=false, points=[];
+
+function resetFlight(){
+    multiplier=1;
+    crashed=false;
+    plane.style.bottom="0px";
+    multiplierDisplay.innerText="1.00x";
+    points=[];
+    ctx.clearRect(0,0,graphCanvas.width,graphCanvas.height);
+}
+
+function flightLoop(){
+    if(crashed){
+        setTimeout(resetFlight,2000);
+        crashed=false;
+    } else {
+        multiplier += 0.01 + Math.random()*0.02;
+        multiplierDisplay.innerText = multiplier.toFixed(2)+"x";
+        plane.style.bottom = (multiplier*10)+"px";
+
+        // Graph
+        const x = points.length*4;
+        const y = graphCanvas.height - multiplier*10;
+        if(x<graphCanvas.width){
+            points.push({x,y});
+            ctx.fillStyle="#e91e63";
+            ctx.beginPath();
+            ctx.arc(x,y,2,0,Math.PI*2);
+            ctx.fill();
+        }
+
+        // Random crash
+        if(Math.random()<0.003){
+            crashed=true;
+            multiplierDisplay.innerText=multiplier.toFixed(2)+"x CRASH!";
+            plane.style.bottom="0px";
+        }
+
+        // Auto cashout simulation
+        collection(db,"bets").get().then(snapshot=>{
+            snapshot.forEach(doc=>{
+                const data=doc.data();
+                if(!data.cashedOut && multiplier>1.5){
+                    setDoc(doc.ref,{...data,cashedOut:true},{merge:true});
+                }
+            });
+        });
+    }
+    requestAnimationFrame(flightLoop);
+}
+
+flightLoop();
+
+</script>
+</body>
+</html>
