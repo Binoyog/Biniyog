@@ -1,15 +1,15 @@
 <!DOCTYPE html>
-<html lang="bn">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Lucky Bet | Games</title>
+<title>Lucky Bet Games</title>
 
 <style>
 body{
   margin:0;
   font-family:Arial, Helvetica, sans-serif;
-  background:#f2f2f2;
+  background:#f4f4f4;
 }
 .header{
   background:#d81b60;
@@ -17,13 +17,14 @@ body{
   padding:14px;
   display:flex;
   align-items:center;
-  justify-content:space-between;
 }
-.back{
-  cursor:pointer;
+.header .back{
   font-size:18px;
+  margin-right:10px;
+  cursor:pointer;
 }
-.title{
+.header .title{
+  font-size:16px;
   font-weight:bold;
 }
 .games{
@@ -34,20 +35,20 @@ body{
 }
 .game{
   background:#fff;
-  border-radius:12px;
-  padding:12px 6px;
+  border-radius:14px;
+  padding:14px 6px;
   text-align:center;
   text-decoration:none;
   color:#000;
   box-shadow:0 2px 6px rgba(0,0,0,.08);
 }
 .game img{
-  width:48px;
-  height:48px;
+  width:52px;
+  height:52px;
 }
 .game span{
   display:block;
-  margin-top:6px;
+  margin-top:8px;
   font-size:12px;
 }
 </style>
@@ -58,130 +59,109 @@ body{
 <div class="header">
   <div class="back" onclick="history.back()">←</div>
   <div class="title">🎯 Lucky Bet Games</div>
-  <div></div>
 </div>
 
 <div class="games">
 
-  <!-- 1 Aviator -->
-  <a href="aviator.html" class="game">
-    <img src="https://cdn-icons-png.flaticon.com/512/2972/2972185.png">
-    <span>Aviator</span>
-  </a>
+<a href="aviator.html" class="game">
+  <img src="https://cdn-icons-png.flaticon.com/512/2972/2972185.png">
+  <span>Aviator</span>
+</a>
 
-  <!-- 2 -->
-  <a href="spin.html" class="game">
-    <img src="https://cdn-icons-png.flaticon.com/512/3523/3523063.png">
-    <span>Lucky Spin</span>
-  </a>
+<a href="lucky-spin.html" class="game">
+  <img src="https://cdn-icons-png.flaticon.com/512/3523/3523063.png">
+  <span>Lucky Spin</span>
+</a>
 
-  <!-- 3 -->
-  <a href="dice.html" class="game">
-    <img src="https://cdn-icons-png.flaticon.com/512/684/684908.png">
-    <span>Dice</span>
-  </a>
+<a href="dice.html" class="game">
+  <img src="https://cdn-icons-png.flaticon.com/512/684/684908.png">
+  <span>Dice</span>
+</a>
 
-  <!-- 4 -->
-  <a href="crash.html" class="game">
-    <img src="https://cdn-icons-png.flaticon.com/512/1055/1055646.png">
-    <span>Crash</span>
-  </a>
+<a href="crash.html" class="game">
+  <img src="https://cdn-icons-png.flaticon.com/512/1055/1055646.png">
+  <span>Crash</span>
+</a>
 
-  <!-- 5 -->
-  <a href="roulette.html" class="game">
-    <img src="https://cdn-icons-png.flaticon.com/512/483/483947.png">
-    <span>Roulette</span>
-  </a>
+<a href="roulette.html" class="game">
+  <img src="https://cdn-icons-png.flaticon.com/512/483/483947.png">
+  <span>Roulette</span>
+</a>
 
-  <!-- 6 -->
-  <a href="coin-flip.html" class="game">
-    <img src="https://cdn-icons-png.flaticon.com/512/138/138292.png">
-    <span>Coin Flip</span>
-  </a>
+<a href="coin-flip.html" class="game">
+  <img src="https://cdn-icons-png.flaticon.com/512/138/138292.png">
+  <span>Coin Flip</span>
+</a>
 
-  <!-- 7 -->
-  <a href="slots.html" class="game">
-    <img src="https://cdn-icons-png.flaticon.com/512/566/566294.png">
-    <span>Slots</span>
-  </a>
+<a href="slots.html" class="game">
+  <img src="https://cdn-icons-png.flaticon.com/512/566/566294.png">
+  <span>Slots</span>
+</a>
 
-  <!-- 8 -->
-  <a href="mines.html" class="game">
-    <img src="https://cdn-icons-png.flaticon.com/512/808/808439.png">
-    <span>Mines</span>
-  </a>
+<a href="mines.html" class="game">
+  <img src="https://cdn-icons-png.flaticon.com/512/808/808439.png">
+  <span>Mines</span>
+</a>
 
-  <!-- 9 -->
-  <a href="keno.html" class="game">
-    <img src="https://cdn-icons-png.flaticon.com/512/992/992700.png">
-    <span>Keno</span>
-  </a>
+<a href="keno.html" class="game">
+  <img src="https://cdn-icons-png.flaticon.com/512/992/992700.png">
+  <span>Keno</span>
+</a>
 
-  <!-- 10 -->
-  <a href="tower.html" class="game">
-    <img src="https://cdn-icons-png.flaticon.com/512/535/535239.png">
-    <span>Tower</span>
-  </a>
+<a href="tower.html" class="game">
+  <img src="https://cdn-icons-png.flaticon.com/512/535/535239.png">
+  <span>Tower</span>
+</a>
 
-  <!-- 11 -->
-  <a href="plinko.html" class="game">
-    <img src="https://cdn-icons-png.flaticon.com/512/2893/2893811.png">
-    <span>Plinko</span>
-  </a>
+<a href="plinko.html" class="game">
+  <img src="https://cdn-icons-png.flaticon.com/512/2893/2893811.png">
+  <span>Plinko</span>
+</a>
 
-  <!-- 12 -->
-  <a href="dragon.html" class="game">
-    <img src="https://cdn-icons-png.flaticon.com/512/616/616554.png">
-    <span>Dragon</span>
-  </a>
+<a href="dragon.html" class="game">
+  <img src="https://cdn-icons-png.flaticon.com/512/616/616554.png">
+  <span>Dragon</span>
+</a>
 
-  <!-- 13 -->
-  <a href="color-prediction.html" class="game">
-    <img src="https://cdn-icons-png.flaticon.com/512/3659/3659899.png">
-    <span>Color</span>
-  </a>
+<a href="color.html" class="game">
+  <img src="https://cdn-icons-png.flaticon.com/512/3659/3659899.png">
+  <span>Color</span>
+</a>
 
-  <!-- 14 -->
-  <a href="number.html" class="game">
-    <img src="https://cdn-icons-png.flaticon.com/512/1828/1828884.png">
-    <span>Number</span>
-  </a>
+<a href="number.html" class="game">
+  <img src="https://cdn-icons-png.flaticon.com/512/1828/1828884.png">
+  <span>Number</span>
+</a>
 
-  <!-- 15 -->
-  <a href="ludo.html" class="game">
-    <img src="https://cdn-icons-png.flaticon.com/512/3534/3534061.png">
-    <span>Ludo</span>
-  </a>
+<a href="ludo.html" class="game">
+  <img src="https://cdn-icons-png.flaticon.com/512/3534/3534061.png">
+  <span>Ludo</span>
+</a>
 
-  <!-- 16 -->
-  <a href="cards.html" class="game">
-    <img src="https://cdn-icons-png.flaticon.com/512/944/944419.png">
-    <span>Cards</span>
-  </a>
+<a href="cards.html" class="game">
+  <img src="https://cdn-icons-png.flaticon.com/512/944/944419.png">
+  <span>Cards</span>
+</a>
 
-  <!-- 17 -->
-  <a href="fish.html" class="game">
-    <img src="https://cdn-icons-png.flaticon.com/512/616/616430.png">
-    <span>Fish</span>
-  </a>
+<a href="fish.html" class="game">
+  <img src="https://cdn-icons-png.flaticon.com/512/616/616430.png">
+  <span>Fish</span>
+</a>
 
-  <!-- 18 -->
-  <a href="poker.html" class="game">
-    <img src="https://cdn-icons-png.flaticon.com/512/889/889648.png">
-    <span>Poker</span>
-  </a>
+<a href="poker.html" class="game">
+  <img src="https://cdn-icons-png.flaticon.com/512/889/889648.png">
+  <span>Poker</span>
+</a>
 
-  <!-- 19 -->
-  <a href="lottery.html" class="game">
-    <img src="https://cdn-icons-png.flaticon.com/512/2921/2921222.png">
-    <span>Lottery</span>
-  </a>
+<a href="lottery.html" class="game">
+  <img src="https://cdn-icons-png.flaticon.com/512/2921/2921222.png">
+  <span>Lottery</span>
+</a>
 
-  <!-- 20 -->
-  <a href="jackpot.html" class="game">
-    <img src="https://cdn-icons-png.flaticon.com/512/2620/2620458.png">
-    <span>Jackpot</span>
-  </a>
+<a href="jackpot.html" class="game">
+  <img src="https://cdn-icons-png.flaticon.com/512/2620/2620458.png">
+  <span>Jackpot</span>
+</a>
 
 </div>
 
