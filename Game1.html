@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Game 1 | Lucky Bet</title>
+
+<style>
+body{
+  margin:0;
+  font-family:Arial, Helvetica, sans-serif;
+  background:#f2f2f2;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  padding:20px;
+}
+.header{
+  width:100%;
+  background:#d81b60;
+  color:#fff;
+  padding:12px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.header .back{cursor:pointer; font-size:18px}
+.header .title{font-weight:bold; font-size:18px}
+
+.balance{margin:16px 0; font-size:20px; font-weight:bold}
+
+.game-area{
+  background:#fff;
+  padding:20px;
+  border-radius:12px;
+  box-shadow:0 4px 10px rgba(0,0,0,0.3);
+  text-align:center;
+  width:100%;
+  max-width:360px;
+}
+
+.game-area input{
+  width:100%;
+  padding:10px;
+  font-size:16px;
+  margin-bottom:12px;
+}
+
+.game-area button{
+  padding:10px 16px;
+  font-size:16px;
+  margin:6px;
+  cursor:pointer;
+  border:none;
+  border-radius:6px;
+  background:#d81b60;
+  color:#fff;
+}
+
+.result{
+  margin-top:16px;
+  font-size:18px;
+  font-weight:bold;
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="back" onclick="history.back()">⬅</div>
+  <div class="title">🎯 Game 1</div>
+  <div style="width:24px"></div>
+</div>
+
+<div class="balance" id="balanceText">৳ 0</div>
+
+<div class="game-area">
+  <input type="number" id="betAmount" placeholder="বেটের পরিমাণ লিখুন">
+  <div>
+    <button onclick="play('Heads')">Heads</button>
+    <button onclick="play('Tails')">Tails</button>
+  </div>
+  <div class="result" id="resultText"></div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getFirestore, doc, onSnapshot, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+/* Firebase config */
+const firebaseConfig = {
+  apiKey: "AIzaSyBFsTzlRPoWHVXEHbKrPdwxslxZGa7Kqfw",
+  authDomain: "biniyog-95d00.firebaseapp.com",
+  projectId: "biniyog-95d00"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+let currentUser;
+let balance = 0;
+
+const balanceText = document.getElementById("balanceText");
+const resultText = document.getElementById("resultText");
+const betAmountInput = document.getElementById("betAmount");
+
+/* Auth check + get user balance */
+onAuthStateChanged(auth, (user)=>{
+  if(!user){
+    window.location.replace("index.html");
+    return;
+  }
+  currentUser = user;
+  const userRef = doc(db,"users",user.uid);
+  onSnapshot(userRef,(docSnap)=>{
+    if(docSnap.exists()){
+      balance = docSnap.data().balance || 0;
+      balanceText.innerText = "৳ " + balance;
+    }
+  });
+});
+
+/* Game logic */
+function play(choice){
+  const bet = Number(betAmountInput.value);
+  if(!bet || bet <=0){
+    alert("বেটের পরিমাণ সঠিক লিখুন");
+    return;
+  }
+  if(bet > balance){
+    alert("তোমার ব্যালেন্স যথেষ্ট নয়");
+    return;
+  }
+
+  // Random result
+  const flip = Math.random() < 0.5 ? 'Heads' : 'Tails';
+  let win = false;
+
+  if(choice === flip){
+    win = true;
+    balance += bet; // win: add
+  } else {
+    balance -= bet; // lose: subtract
+  }
+
+  // Update Firestore
+  const userRef = doc(db,"users",currentUser.uid);
+  updateDoc(userRef,{
+    balance: balance,
+    lastPlayed: serverTimestamp()
+  });
+
+  // Show result
+  resultText.innerText = `Result: ${flip} | ${win ? 'You Win! 🎉' : 'You Lose 😢'}`;
+  balanceText.innerText = "৳ " + balance;
+}
+</script>
+
+</body>
+</html>
