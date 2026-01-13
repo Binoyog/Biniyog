@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lucky Bet | Game 1</title>
+<style>
+  body{
+    margin:0;
+    font-family:Arial, Helvetica, sans-serif;
+    background: linear-gradient(135deg,#ffecd2,#fcb69f);
+    display:flex;
+    flex-direction:column;
+    min-height:100vh;
+  }
+  .header{
+    background:#d81b60;
+    color:#fff;
+    padding:16px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+  .header .left{
+    cursor:pointer;
+    font-weight:bold;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .header .balance{
+    background:#fff;
+    color:#d81b60;
+    padding:6px 14px;
+    border-radius:20px;
+    cursor:pointer;
+  }
+  .logout{
+    font-size:20px;
+    cursor:pointer;
+    margin-left:12px;
+  }
+  .notice{
+    background:#f9a825;
+    color:#000;
+    text-align:center;
+    padding:12px;
+    font-size:16px;
+    font-weight:bold;
+  }
+  .game-container{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    padding:16px;
+  }
+  .game-card{
+    width:300px;
+    max-width:90%;
+    background:#fff;
+    border-radius:20px;
+    padding:40px;
+    text-align:center;
+    box-shadow:0 4px 15px rgba(0,0,0,0.2);
+    font-size:24px;
+    font-weight:bold;
+    color:#d81b60;
+  }
+  .play-btn{
+    margin-top:30px;
+    background:#d81b60;
+    color:#fff;
+    font-size:18px;
+    padding:14px 28px;
+    border:none;
+    border-radius:12px;
+    cursor:pointer;
+    transition:0.3s;
+  }
+  .play-btn:hover{
+    background:#b71c1c;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="left" onclick="location.href='lucky-bet.html'">← Back to Lucky Bet</div>
+  <div style="display:flex;align-items:center;">
+    <div class="balance" id="balanceBtn">Tap To Balance</div>
+    <div class="logout" id="logoutBtn">⎋</div>
+  </div>
+</div>
+
+<div class="notice">Lucky Bet - Game 1</div>
+
+<div class="game-container">
+  <div class="game-card">
+    🎲 Roll the Dice! 🎲
+    <button class="play-btn" onclick="playGame()">Play Game 1</button>
+  </div>
+</div>
+
+<script type="module">
+  let balanceBtn = document.getElementById('balanceBtn');
+  let showBalance = false;
+  let liveBalance = 0;
+
+  /* Firebase Setup */
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
+  import { getFirestore, doc, getDoc, setDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBFsTzlRPoWHVXEHbKrPdwxslxZGa7Kqfw",
+    authDomain: "biniyog-95d00.firebaseapp.com",
+    projectId: "biniyog-95d00"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  /* AUTH + REALTIME BALANCE */
+  onAuthStateChanged(auth, async (user)=>{
+    if(!user){
+      location.href="index.html";
+      return;
+    }
+    const userRef = doc(db,"users",user.uid);
+    const snap = await getDoc(userRef);
+    if(!snap.exists()){
+      await setDoc(userRef,{
+        uid:user.uid,
+        phone:user.phoneNumber||"",
+        role:"user",
+        balance:0,
+        createdAt:serverTimestamp()
+      });
+    }
+    onSnapshot(userRef, docSnap=>{
+      if(docSnap.exists()){
+        liveBalance = docSnap.data().balance || 0;
+        if(showBalance) balanceBtn.innerText = "৳ "+liveBalance;
+      }
+    });
+  });
+
+  balanceBtn.onclick = ()=>{
+    showBalance = !showBalance;
+    balanceBtn.innerText = showBalance ? "৳ "+liveBalance : "Tap To Balance";
+  };
+
+  document.getElementById("logoutBtn").onclick = async ()=>{
+    await signOut(auth);
+    location.href="index.html";
+  };
+
+  /* Simple game logic */
+  function playGame(){
+    const win = Math.random() < 0.5;
+    if(win){
+      alert("🎉 Congratulation! You won Game 1!");
+      // এখানে চাইলে Firestore এ balance update করতে পারো
+    } else {
+      alert("😢 Sorry, you lost. Try again!");
+    }
+  }
+</script>
+
+</body>
+</html>
