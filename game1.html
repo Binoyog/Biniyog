@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Boxing King Slot</title>
+<style>
+body {
+  margin:0;
+  font-family: Arial, sans-serif;
+  background: #111;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.header {
+  width: 100%;
+  background: #d81b60;
+  padding: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.header .balance {
+  background: #fff;
+  color: #d81b60;
+  padding: 5px 10px;
+  border-radius: 20px;
+  cursor: pointer;
+}
+.header .logout {
+  cursor: pointer;
+}
+.game-container {
+  margin-top: 20px;
+}
+.reels {
+  display: flex;
+  gap: 10px;
+}
+.reel {
+  background: #222;
+  width: 60px;
+  height: 180px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 5px;
+  border-radius: 8px;
+}
+.symbol {
+  height: 50px;
+  background: #555;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  font-weight: bold;
+  font-size: 16px;
+}
+.controls {
+  margin-top: 20px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+button {
+  padding: 10px 20px;
+  background: #d81b60;
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 16px;
+  cursor: pointer;
+}
+#winDisplay {
+  font-size: 18px;
+  margin-left: 10px;
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>🎯 Boxing King</div>
+  <div class="balance" id="balanceBtn">Tap To Balance</div>
+  <div class="logout" id="logoutBtn">⎋</div>
+</div>
+
+<div class="game-container">
+  <div class="reels" id="reelsContainer">
+    <div class="reel" id="reel0">
+      <div class="symbol">A</div>
+      <div class="symbol">K</div>
+      <div class="symbol">Q</div>
+    </div>
+    <div class="reel" id="reel1">
+      <div class="symbol">A</div>
+      <div class="symbol">K</div>
+      <div class="symbol">Q</div>
+    </div>
+    <div class="reel" id="reel2">
+      <div class="symbol">A</div>
+      <div class="symbol">K</div>
+      <div class="symbol">Q</div>
+    </div>
+    <div class="reel" id="reel3">
+      <div class="symbol">A</div>
+      <div class="symbol">K</div>
+      <div class="symbol">Q</div>
+    </div>
+    <div class="reel" id="reel4">
+      <div class="symbol">A</div>
+      <div class="symbol">K</div>
+      <div class="symbol">Q</div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button id="spinBtn">SPIN</button>
+    <div>BET: <input type="number" id="betAmount" value="10" min="1" style="width:60px;"></div>
+    <div id="winDisplay">WIN: 0</div>
+  </div>
+</div>
+
+<script type="module">
+// Firebase imports
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc, onSnapshot, serverTimestamp, updateDoc } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+
+/* Firebase config */
+const firebaseConfig = {
+  apiKey: "AIzaSyBFsTzlRPoWHVXEHbKrPdwxslxZGa7Kqfw",
+  authDomain: "biniyog-95d00.firebaseapp.com",
+  projectId: "biniyog-95d00"
+};
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+const balanceBtn = document.getElementById("balanceBtn");
+let showBalance = false;
+let liveBalance = 0;
+let currentUser = null;
+
+/* AUTH + USER INIT */
+onAuthStateChanged(auth, async (user)=>{
+  if(!user){
+    location.href="index.html";
+    return;
+  }
+  currentUser = user;
+  const userRef = doc(db,"users",user.uid);
+  const snap = await getDoc(userRef);
+
+  if(!snap.exists()){
+    await setDoc(userRef,{
+      uid: user.uid,
+      phone: user.phoneNumber || "",
+      role: "user",
+      balance: 1000, // demo starting balance
+      createdAt: serverTimestamp()
+    });
+  }
+
+  onSnapshot(userRef, (docSnap)=>{
+    if(docSnap.exists()){
+      liveBalance = docSnap.data().balance || 0;
+      if(showBalance){
+        balanceBtn.innerText = "৳ " + liveBalance;
+      }
+    }
+  });
+});
+
+/* Toggle balance */
+balanceBtn.onclick = ()=>{
+  showBalance = !showBalance;
+  balanceBtn.innerText = showBalance ? "৳ "+liveBalance : "Tap To Balance";
+};
+
+/* Logout */
+document.getElementById("logoutBtn").onclick = async ()=>{
+  await signOut(auth);
+  location.href="index.html";
+};
+
+/* SLOT GAME LOGIC */
+const symbols = ["A","K","Q","J","10","WILD","SCATTER"];
+const reels = Array.from(document.querySelectorAll(".reel"));
+
+function spinReels() {
+  const bet = parseInt(document.getElementById("betAmount").value) || 1;
+  if(bet > liveBalance){
+    alert("Insufficient balance!");
+    return;
+  }
+  let winAmount = 0;
+
+  // Deduct bet
+  liveBalance -= bet;
+  updateBalanceFirebase(liveBalance);
+
+  reels.forEach(reel=>{
+    const children = Array.from(reel.children);
+    children.forEach(symbolDiv=>{
+      const randSymbol = symbols[Math.floor(Math.random()*symbols.length)];
+      symbolDiv.innerText = randSymbol;
+      if(randSymbol==="WILD") symbolDiv.style.background="#f1c40f";
+      else if(randSymbol==="SCATTER") symbolDiv.style.background="#e74c3c";
+      else symbolDiv.style.background="#555";
+    });
+  });
+
+  // Simple win logic: if middle row all same symbol (reel[0].children[1] etc)
+  const middleRow = reels.map(reel => reel.children[1].innerText);
+  if(new Set(middleRow).size===1){
+    winAmount = bet*5;
+  } else if(middleRow.filter(s=>s==="SCATTER").length>=3){
+    winAmount = bet*10;
+  }
+
+  liveBalance += winAmount;
+  updateBalanceFirebase(liveBalance);
+  document.getElementById("winDisplay").innerText = "WIN: "+winAmount;
+}
+
+function updateBalanceFirebase(balance){
+  if(currentUser){
+    const userRef = doc(db,"users",currentUser.uid);
+    updateDoc(userRef,{balance: balance});
+  }
+}
+
+document.getElementById("spinBtn").onclick = spinReels;
+</script>
+
+</body>
+</html>
