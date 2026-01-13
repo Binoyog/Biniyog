@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lucky Bet | Game 1</title>
+
+<style>
+body{
+  margin:0;
+  font-family:Arial, Helvetica, sans-serif;
+  background:#f2f2f2;
+}
+.header{
+  background:#d81b60;
+  color:#fff;
+  padding:14px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+.header .left{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  cursor:pointer;
+}
+.header .balance{
+  background:#fff;
+  color:#d81b60;
+  padding:6px 14px;
+  border-radius:20px;
+  font-size:14px;
+  cursor:pointer;
+}
+.logout{
+  font-size:20px;
+  cursor:pointer;
+}
+.notice{
+  background:#f9a825;
+  margin:12px;
+  padding:10px;
+  border-radius:6px;
+  font-size:14px;
+  text-align:center;
+}
+.game-container{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  margin:20px;
+}
+.game-container img{
+  width:200px;
+  max-width:90%;
+  border-radius:10px;
+  margin-bottom:20px;
+}
+.play-btn{
+  background:#d81b60;
+  color:#fff;
+  padding:12px 24px;
+  font-size:16px;
+  border:none;
+  border-radius:10px;
+  cursor:pointer;
+}
+.play-btn:hover{
+  background:#b71c1c;
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">
+  <div class="left" onclick="location.href='lucky-bet.html'">
+    ← <strong>Back to Lucky Bet</strong>
+  </div>
+  <div class="balance" id="balanceBtn">Tap To Balance</div>
+  <div class="logout" id="logoutBtn">⎋</div>
+</div>
+
+<div class="notice">
+  Lucky Bet - Game 1
+</div>
+
+<div class="game-container">
+  <img src="assets/images/game1.png" alt="Game 1">
+  <button class="play-btn" onclick="playGame()">Play Game 1</button>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
+import { getFirestore, doc, onSnapshot, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+
+/* Firebase */
+const firebaseConfig = {
+  apiKey: "AIzaSyBFsTzlRPoWHVXEHbKrPdwxslxZGa7Kqfw",
+  authDomain: "biniyog-95d00.firebaseapp.com",
+  projectId: "biniyog-95d00"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+const balanceBtn = document.getElementById("balanceBtn");
+let showBalance = false;
+let liveBalance = 0;
+
+/* AUTH + USER INIT + REALTIME BALANCE */
+onAuthStateChanged(auth, async (user)=>{
+  if(!user){
+    location.href="index.html";
+    return;
+  }
+
+  const userRef = doc(db,"users",user.uid);
+  const snap = await getDoc(userRef);
+
+  if(!snap.exists()){
+    await setDoc(userRef,{
+      uid: user.uid,
+      phone: user.phoneNumber || "",
+      role: "user",
+      balance: 0,
+      createdAt: serverTimestamp()
+    });
+  }
+
+  onSnapshot(userRef, (docSnap)=>{
+    if(docSnap.exists()){
+      liveBalance = docSnap.data().balance || 0;
+      if(showBalance){
+        balanceBtn.innerText = "৳ " + liveBalance;
+      }
+    }
+  });
+});
+
+/* Toggle balance */
+balanceBtn.onclick = ()=>{
+  showBalance = !showBalance;
+  balanceBtn.innerText = showBalance ? "৳ "+liveBalance : "Tap To Balance";
+};
+
+/* Logout */
+document.getElementById("logoutBtn").onclick = async ()=>{
+  await signOut(auth);
+  location.href="index.html";
+};
+
+/* Simple play function */
+function playGame(){
+  const win = Math.random() < 0.5; // 50% chance
+  if(win){
+    alert("🎉 Congratulation! You won Game 1!");
+    // এখানে চাইলে Firestore এ balance update করতে পারো
+  } else {
+    alert("😢 Sorry, you lost. Try again!");
+  }
+}
+</script>
+
+</body>
+</html>
