@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jili Boxing King Slot Game</title>
+<style>
+body {
+  margin:0;
+  font-family: Arial, sans-serif;
+  background: #1b1b1b;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 100vh;
+}
+header {
+  width: 100%;
+  padding: 10px;
+  background: #d81b60;
+  text-align: center;
+  font-size: 24px;
+  font-weight: bold;
+}
+#balance {
+  margin: 10px 0;
+  font-size: 18px;
+  background:#fff;color:#d81b60;padding:5px 10px;border-radius:8px;
+  cursor:pointer;
+}
+.slot-container {
+  display: grid;
+  grid-template-columns: repeat(5, 80px);
+  grid-template-rows: repeat(3, 80px);
+  gap: 5px;
+  margin: 20px 0;
+}
+.reel {
+  background: #222;
+  border: 2px solid #444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: bold;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+button {
+  padding: 10px 15px;
+  font-size: 16px;
+  border:none;
+  border-radius:5px;
+  cursor:pointer;
+  background:#d81b60;
+  color:#fff;
+}
+button:hover { background:#c2185b; }
+#bet { width:60px; text-align:center; font-size:16px; }
+#win { width:80px; text-align:center; font-size:16px; background:#ffc107;color:#000;padding:5px 10px;border-radius:5px; }
+</style>
+</head>
+<body>
+
+<header>🎰 Jili Boxing King Slot 🎰</header>
+<div id="balance">৳ 1000</div>
+
+<div class="slot-container" id="slot">
+  <!-- 5x3 reels -->
+  <div class="reel">🍎</div><div class="reel">🍌</div><div class="reel">🍒</div><div class="reel">🍇</div><div class="reel">🍉</div>
+  <div class="reel">🍒</div><div class="reel">🍎</div><div class="reel">🍌</div><div class="reel">🍇</div><div class="reel">🍉</div>
+  <div class="reel">🍎</div><div class="reel">🍌</div><div class="reel">🍒</div><div class="reel">🍇</div><div class="reel">🍉</div>
+</div>
+
+<div class="controls">
+  <button id="betMinus">-</button>
+  <input type="text" id="bet" value="10">
+  <button id="betPlus">+</button>
+  <button id="spin">SPIN</button>
+  <div id="win">WIN: 0</div>
+</div>
+
+<script>
+let balance = 1000;
+let bet = 10;
+let symbols = ["🥊","👊","🔥","💥","⚡","💎","🍒","🍇","🍉"];
+const slot = document.getElementById('slot');
+const reels = Array.from(document.getElementsByClassName('reel'));
+const balanceEl = document.getElementById('balance');
+const betEl = document.getElementById('bet');
+const winEl = document.getElementById('win');
+
+function updateDisplay(){
+  balanceEl.innerText = "৳ " + balance;
+  betEl.value = bet;
+}
+
+document.getElementById('betMinus').onclick = ()=>{
+  if(bet>1){ bet--; updateDisplay(); }
+};
+document.getElementById('betPlus').onclick = ()=>{
+  if(bet<balance){ bet++; updateDisplay(); }
+};
+
+function spinReels(){
+  if(bet>balance){
+    alert("আপনার ব্যালেন্স কম!");
+    return;
+  }
+  balance -= bet;
+  updateDisplay();
+  let win = 0;
+
+  // Randomize reels
+  reels.forEach(r=>{
+    let sym = symbols[Math.floor(Math.random()*symbols.length)];
+    r.innerText = sym;
+  });
+
+  // Simple winning logic: 3 in a row (horizontal) same symbol
+  for(let row=0; row<3; row++){
+    let start = row*5;
+    let first = reels[start].innerText;
+    if(reels[start+1].innerText==first && reels[start+2].innerText==first){
+      win += bet*2;
+    }
+  }
+
+  if(win>0){
+    balance += win;
+    winEl.innerText = "WIN: "+win;
+  }else{
+    winEl.innerText = "WIN: 0";
+  }
+
+  updateDisplay();
+}
+
+document.getElementById('spin').onclick = spinReels;
+
+updateDisplay();
+</script>
+
+</body>
+</html>
