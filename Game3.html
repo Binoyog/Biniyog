@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lucky Bet | Game 1</title>
+<style>
+  /* ===== Body & Font ===== */
+  body {
+    margin:0;
+    font-family: Arial, Helvetica, sans-serif;
+    background: linear-gradient(135deg,#ffe6e6,#ffd6d6);
+    display:flex;
+    flex-direction:column;
+    min-height:100vh;
+  }
+
+  /* ===== Header ===== */
+  .header {
+    background:#d81b60;
+    color:#fff;
+    padding:16px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+  .header .left {
+    cursor:pointer;
+    font-weight:bold;
+    font-size:18px;
+  }
+  .header .balance {
+    background:#fff;
+    color:#d81b60;
+    padding:6px 14px;
+    border-radius:20px;
+    cursor:pointer;
+    margin-right:12px;
+  }
+  .logout {
+    font-size:20px;
+    cursor:pointer;
+  }
+
+  /* ===== Notice / Banner ===== */
+  .notice {
+    background:#f9a825;
+    text-align:center;
+    padding:12px;
+    font-weight:bold;
+    font-size:16px;
+    color:#000;
+  }
+
+  /* ===== Game Card ===== */
+  .game-container {
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    padding:16px;
+  }
+  .game-card {
+    width:350px;
+    max-width:90%;
+    background:#fff;
+    border-radius:20px;
+    padding:50px 20px;
+    text-align:center;
+    box-shadow:0 6px 20px rgba(0,0,0,0.25);
+    font-size:26px;
+    font-weight:bold;
+    color:#d81b60;
+  }
+
+  /* ===== Play Button ===== */
+  .play-btn {
+    margin-top:30px;
+    background:#d81b60;
+    color:#fff;
+    font-size:18px;
+    padding:16px 30px;
+    border:none;
+    border-radius:12px;
+    cursor:pointer;
+    transition:0.3s;
+  }
+  .play-btn:hover {
+    background:#b71c1c;
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== Header ===== -->
+<div class="header">
+  <div class="left" onclick="location.href='lucky-bet.html'">← Back to Lucky Bet</div>
+  <div style="display:flex; align-items:center;">
+    <div class="balance" id="balanceBtn">Tap To Balance</div>
+    <div class="logout" id="logoutBtn">⎋</div>
+  </div>
+</div>
+
+<!-- ===== Notice ===== -->
+<div class="notice">Lucky Bet - Game 1</div>
+
+<!-- ===== Game Card ===== -->
+<div class="game-container">
+  <div class="game-card">
+    🎲 Roll the Dice! 🎲
+    <br>
+    <button class="play-btn" onclick="playGame()">Play Game 1</button>
+  </div>
+</div>
+
+<script type="module">
+  let balanceBtn = document.getElementById('balanceBtn');
+  let showBalance = false;
+  let liveBalance = 0;
+
+  /* Firebase Setup */
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
+  import { getFirestore, doc, getDoc, setDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBFsTzlRPoWHVXEHbKrPdwxslxZGa7Kqfw",
+    authDomain: "biniyog-95d00.firebaseapp.com",
+    projectId: "biniyog-95d00"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  /* Auth + Realtime Balance */
+  onAuthStateChanged(auth, async (user)=>{
+    if(!user){ location.href="index.html"; return; }
+
+    const userRef = doc(db,"users",user.uid);
+    const snap = await getDoc(userRef);
+    if(!snap.exists()){
+      await setDoc(userRef,{
+        uid:user.uid,
+        phone:user.phoneNumber||"",
+        role:"user",
+        balance:0,
+        createdAt:serverTimestamp()
+      });
+    }
+
+    onSnapshot(userRef, docSnap=>{
+      if(docSnap.exists()){
+        liveBalance = docSnap.data().balance || 0;
+        if(showBalance) balanceBtn.innerText = "৳ "+liveBalance;
+      }
+    });
+  });
+
+  /* Toggle balance */
+  balanceBtn.onclick = ()=>{
+    showBalance = !showBalance;
+    balanceBtn.innerText = showBalance ? "৳ "+liveBalance : "Tap To Balance";
+  };
+
+  /* Logout */
+  document.getElementById("logoutBtn").onclick = async ()=>{
+    await signOut(auth);
+    location.href="index.html";
+  };
+
+  /* Simple Game Logic */
+  function playGame(){
+    const win = Math.random() < 0.5;
+    if(win){
+      alert("🎉 Congrats! You won Game 1!");
+    } else {
+      alert("😢 Sorry, you lost. Try again!");
+    }
+  }
+</script>
+
+</body>
+</html>
