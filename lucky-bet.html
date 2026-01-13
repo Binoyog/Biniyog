@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lucky Bet | Games</title>
+
+<style>
+body{
+  margin:0;
+  font-family:Arial, Helvetica, sans-serif;
+  background:#f2f2f2;
+}
+
+/* Header */
+.header{
+  background:#d81b60;
+  color:#fff;
+  padding:14px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+.header .left{
+  cursor:pointer;
+  font-weight:bold;
+}
+.header .right{
+  font-size:14px;
+  background:#fff;
+  color:#d81b60;
+  padding:6px 14px;
+  border-radius:20px;
+}
+
+/* Notice */
+.notice{
+  background:#f9a825;
+  margin:12px;
+  padding:10px;
+  border-radius:6px;
+  font-size:14px;
+  text-align:center;
+}
+
+/* Game Grid */
+.games{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:14px;
+  padding:12px;
+}
+.game{
+  background:#fff;
+  border-radius:12px;
+  overflow:hidden;
+  text-decoration:none;
+  color:#000;
+  box-shadow:0 4px 8px rgba(0,0,0,.15);
+}
+.game img{
+  width:100%;
+  height:140px;
+  object-fit:cover;
+}
+.game span{
+  display:block;
+  padding:10px;
+  text-align:center;
+  font-weight:bold;
+}
+
+/* Footer */
+.footer{
+  text-align:center;
+  font-size:12px;
+  color:#666;
+  padding:12px;
+}
+</style>
+</head>
+
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="left" onclick="location.href='dashboard.html'">⬅ Dashboard</div>
+  <div class="right">Lucky Bet</div>
+</div>
+
+<div class="notice">
+  🎯 Lucky Bet গেম বেছে নিন এবং খেলুন
+</div>
+
+<!-- Games -->
+<div class="games">
+
+  <a class="game" href="game1.html">
+    <img src="https://cdn.prod.website-files.com/5f972aac086b5ecfd0538315/64591051193ff8c03d927734_thai_bikini_model_the_pimp_bangkok_thumbnail.jpg">
+    <span>Lucky Game 1</span>
+  </a>
+
+  <a class="game" href="game2.html">
+    <img src="https://share.google/dHmfaS8cwJdpuqymm">
+    <span>Lucky Game 2</span>
+  </a>
+
+  <a class="game" href="game3.html">
+    <img src="https://share.google/Leyv1thRI7evlFZFD">
+    <span>Lucky Game 3</span>
+  </a>
+
+  <a class="game" href="game4.html">
+    <img src="https://share.google/rewWisc9gaZixQIE4">
+    <span>Lucky Game 4</span>
+  </a>
+
+</div>
+
+<div class="footer">
+  © 2026 Lucky Bet | Play Responsibly
+</div>
+
+</body>
+</html>
