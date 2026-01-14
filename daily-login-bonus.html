@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Biniyog Daily Login Bonus</title>
+
+<script type="module">
+  // Firebase 12.7.0 imports
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+  import { getFirestore, doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
+
+  // Firebase config
+  const firebaseConfig = {
+    apiKey: "AIzaSyBFsTzlRPoWHVXEHbKrPdwxslxZGa7Kqfw",
+    authDomain: "biniyog-95d00.firebaseapp.com",
+    projectId: "biniyog-95d00",
+    storageBucket: "biniyog-95d00.firebasestorage.app",
+    messagingSenderId: "523238228802",
+    appId: "1:523238228802:web:a65183bdc4c268f94efedb"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const auth = getAuth(app);
+
+  let userId = null;
+
+  const dailyBonusBtn = document.getElementById("claimBonus");
+  const balanceEl = document.getElementById("balance");
+  const streakEl = document.getElementById("streak");
+  const messageEl = document.getElementById("message");
+
+  // Wait for user login
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      userId = user.uid;
+      loadUserData();
+    } else {
+      messageEl.innerText = "অনুগ্রহ করে প্রথমে লগইন করুন।";
+    }
+  });
+
+  async function claimDailyBonus() {
+    if (!userId) return;
+
+    const userRef = doc(db, "users", userId);
+    const userSnap = await getDoc(userRef);
+
+    if (!userSnap.exists()) {
+      await setDoc(userRef, {
+        balance: 0,
+        lastLoginDate: "",
+        loginStreak: 0,
+        withdrawAllowed: false
+      });
+    }
+
+    const userData = userSnap.exists() ? userSnap.data() : {
+      balance: 0, lastLoginDate: "", loginStreak: 0, withdrawAllowed: false
+    };
+
+    const today = new Date().toISOString().split("T")[0];
+    const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
+
+    if (userData.lastLoginDate === today) {
+      messageEl.innerText = "আজকের বোনাস ইতিমধ্যেই নেওয়া হয়েছে ✔️";
+      return;
+    }
+
+    let streak = (userData.lastLoginDate === yesterday) ? (userData.loginStreak + 1) : 1;
+    if (streak > 7) streak = 1;
+
+    const bonus = (streak === 7) ? 40 : 20;
+    const newBalance = (userData.balance + bonus);
+    const withdrawAllowed = newBalance >= 500;
+
+    await updateDoc(userRef, {
+      balance: newBalance,
+      loginStreak: streak,
+      lastLoginDate: today,
+      withdrawAllowed: withdrawAllowed
+    });
+
+    balanceEl.innerText = `Balance: ৳${newBalance}`;
+    streakEl.innerText = `Login Streak: ${streak} day(s)`;
+    messageEl.innerText = `আপনি আজকের বোনাস পেয়েছেন: ৳${bonus} 🎉`;
+  }
+
+  dailyBonusBtn.addEventListener("click", claimDailyBonus);
+
+  async function loadUserData() {
+    if (!userId) return;
+
+    const userRef = doc(db, "users", userId);
+    const userSnap = await getDoc(userRef);
+
+    if (userSnap.exists()) {
+      const data = userSnap.data();
+      balanceEl.innerText = `Balance: ৳${data.balance}`;
+      streakEl.innerText = `Login Streak: ${data.loginStreak} day(s)`;
+    }
+  }
+</script>
+
+<style>
+  body { font-family: Arial, sans-serif; padding: 20px; background: #f0f4f8; }
+  .card { background: white; padding: 20px; border-radius: 12px; max-width: 380px; margin: auto; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: center; }
+  button { padding: 10px 20px; border: none; background: #22c55e; color: white; border-radius: 8px; font-size: 16px; cursor: pointer; margin-top: 10px; }
+  button:hover { background: #16a34a; }
+  #message { margin-top: 15px; color: #0369a1; font-weight: bold; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h2>Daily Login Bonus</h2>
+  <p id="balance">Balance: ৳0</p>
+  <p id="streak">Login Streak: 0 day(s)</p>
+  <button id="claimBonus">Claim Today's Bonus</button>
+  <p id="message"></p>
+</div>
+</body>
+</html>
