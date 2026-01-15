@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<title>Biniyog | Admin Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body{
+  margin:0;
+  font-family: Arial, sans-serif;
+  background:#f5f6fa;
+}
+.header{
+  display:flex;
+  justify-content:flex-end;
+  align-items:center;
+  padding:10px 20px;
+  background:#0b1a33;
+  box-shadow:0 2px 10px rgba(0,0,0,.5);
+}
+.user-icon{
+  width:50px;
+  height:50px;
+  background:#18f2c2;
+  color:#000;
+  border-radius:50%;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  font-weight:bold;
+  font-size:22px;
+  cursor:pointer;
+  margin-left:15px;
+}
+.logout{
+  background:#18f2c2;
+  color:#000;
+  border:none;
+  padding:8px 12px;
+  border-radius:5px;
+  cursor:pointer;
+  font-size:14px;
+  margin-right:10px;
+}
+.container{
+  max-width:1200px;
+  margin:auto;
+  padding:20px;
+}
+.dashboard{
+  display:flex;
+  gap:20px;
+  flex-wrap:wrap;
+}
+.card{
+  flex:1;
+  min-width:300px;
+  background:#1a2a4d;
+  padding:15px;
+  border-radius:8px;
+  box-shadow:0 2px 10px rgba(0,0,0,.6);
+  font-size:14px;
+  color:#fff;
+}
+.card h2{color:#ffc107}
+.item{border-bottom:1px solid #3a4a6f;padding:8px 0}
+.row{display:flex;gap:10px;margin-top:6px}
+button{flex:1;padding:6px;border:none;border-radius:5px;cursor:pointer;color:#fff}
+.approve{background:#198754}
+.reject{background:#dc3545}
+
+/* USER MODAL */
+#userModal{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.6);
+  display:none;
+  justify-content:center;
+  align-items:center;
+  z-index:1000;
+}
+.modal-box{
+  background:#fff;
+  width:90%;
+  max-width:500px;
+  max-height:80vh;
+  overflow:auto;
+  border-radius:8px;
+  padding:15px;
+}
+.modal-box h3{margin-top:0}
+.userRow{
+  padding:8px;
+  border-bottom:1px solid #ddd;
+  cursor:pointer;
+}
+.userRow:hover{background:#f1f1f1}
+.msgBox{
+  margin-top:10px;
+  display:none;
+}
+.msgBox textarea{
+  width:100%;
+  height:70px;
+}
+.msgBox button{
+  margin-top:6px;
+  background:#0d6efd;
+}
+.closeBtn{
+  float:right;
+  cursor:pointer;
+  font-weight:bold;
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">
+  <button class="logout" onclick="logout()">Logout</button>
+  <div class="user-icon" id="userIcon">U</div>
+</div>
+
+<div class="container">
+  <div class="dashboard">
+
+    <div class="card">
+      <h2>Pending Deposits</h2>
+      <div id="depositList">Loading...</div>
+      <p><b>Total:</b> <span id="depositNumber">0</span></p>
+    </div>
+
+    <div class="card">
+      <h2>Pending Withdraws</h2>
+      <div id="withdrawList">Loading...</div>
+      <p><b>Total:</b> <span id="withdrawNumber">0</span></p>
+    </div>
+
+  </div>
+</div>
+
+<!-- USER MODAL -->
+<div id="userModal">
+  <div class="modal-box">
+    <span class="closeBtn" onclick="closeModal()">✖</span>
+    <h3>All Users</h3>
+    <div id="userList"></div>
+
+    <div class="msgBox" id="msgBox">
+      <h4 id="msgUser"></h4>
+      <textarea id="msgText" placeholder="Write message..."></textarea>
+      <button onclick="sendMessage()">Send Message</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
+import { getFirestore, collection, getDocs, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+
+const app = initializeApp({
+  apiKey: "AIzaSyBFsTzlRPoWHVXEHbKrPdwxslxZGa7Kqfw",
+  authDomain: "biniyog-95d00.firebaseapp.com",
+  projectId: "biniyog-95d00"
+});
+const auth=getAuth(app);
+const db=getFirestore(app);
+
+let selectedUser=null;
+
+/* U CLICK */
+document.getElementById("userIcon").onclick=loadUsers;
+
+async function loadUsers(){
+  document.getElementById("userModal").style.display="flex";
+  const list=document.getElementById("userList");
+  list.innerHTML="Loading...";
+  const snap=await getDocs(collection(db,"users"));
+  list.innerHTML="";
+  snap.forEach(d=>{
+    const u=d.data();
+    list.innerHTML+=`
+      <div class="userRow" onclick="selectUser('${d.id}','${u.phone||""}')">
+        <b>${u.name||"User"}</b><br>
+        📞 ${u.phone||"N/A"} | ৳${u.balance||0}
+      </div>`;
+  });
+}
+
+window.selectUser=(uid,phone)=>{
+  selectedUser=uid;
+  document.getElementById("msgBox").style.display="block";
+  document.getElementById("msgUser").innerText="Message to: "+phone;
+}
+
+window.sendMessage=async()=>{
+  const text=document.getElementById("msgText").value.trim();
+  if(!text||!selectedUser) return alert("Message empty");
+  await addDoc(collection(db,"inbox"),{
+    uid:selectedUser,
+    message:text,
+    read:false,
+    createdAt:serverTimestamp()
+  });
+  document.getElementById("msgText").value="";
+  alert("Message sent");
+}
+
+window.closeModal=()=>{
+  document.getElementById("userModal").style.display="none";
+  document.getElementById("msgBox").style.display="none";
+}
+
+window.logout=async()=>{
+  await signOut(auth);
+  location.href="admin-login.html";
+}
+</script>
+
+</body>
+</html>
