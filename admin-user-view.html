@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<title>Biniyog | Admin User View</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body{
+  margin:0;
+  font-family: Arial, sans-serif;
+  background:#f5f6fa;
+}
+.header{
+  background:#2f3640;
+  color:#fff;
+  padding:15px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.container{
+  padding:15px;
+}
+.card{
+  background:#fff;
+  border-radius:8px;
+  padding:15px;
+  margin-bottom:15px;
+  box-shadow:0 2px 6px rgba(0,0,0,0.1);
+}
+.card h3{
+  margin:0 0 10px 0;
+  font-size:16px;
+  color:#333;
+}
+.value{
+  font-size:15px;
+  color:#555;
+}
+.readonly{
+  background:#ffeaa7;
+  padding:10px;
+  border-radius:6px;
+  font-size:13px;
+  margin-bottom:15px;
+}
+table{
+  width:100%;
+  border-collapse:collapse;
+}
+table th, table td{
+  border:1px solid #ddd;
+  padding:8px;
+  font-size:13px;
+  text-align:left;
+}
+table th{
+  background:#f1f2f6;
+}
+.small{
+  font-size:12px;
+  color:#888;
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>👁 Admin User Dashboard View</div>
+  <div class="small">Read Only Mode</div>
+</div>
+
+<div class="container">
+
+  <div class="readonly">
+    ⚠️ আপনি বর্তমানে <b>Read-Only</b> মোডে আছেন।  
+    কোনো তথ্য পরিবর্তন করা যাবে না।
+  </div>
+
+  <div class="card">
+    <h3>👤 User Information</h3>
+    <div class="value">Name: <span id="name">Loading...</span></div>
+    <div class="value">Phone: <span id="phone">Loading...</span></div>
+    <div class="value">Balance: <span id="balance">0</span> ৳</div>
+    <div class="value">Current Plan: <span id="plan">N/A</span></div>
+  </div>
+
+  <div class="card">
+    <h3>📄 Deposits</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Amount</th>
+          <th>Status</th>
+          <th>TRX</th>
+        </tr>
+      </thead>
+      <tbody id="depositList">
+        <tr><td colspan="3">Loading...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>💸 Withdraws</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Amount</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="withdrawList">
+        <tr><td colspan="2">Loading...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>📊 Transactions</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Amount</th>
+        </tr>
+      </thead>
+      <tbody id="txList">
+        <tr><td colspan="2">Loading...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+import { getFirestore, doc, getDoc, collection, query, where, getDocs } 
+from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+/* 🔥 Firebase Config (নিজেরটা বসাবে) */
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth();
+const db = getFirestore();
+
+const uid = new URLSearchParams(window.location.search).get("uid");
+
+if(!uid){
+  alert("User UID missing");
+}
+
+onAuthStateChanged(auth, async (user)=>{
+  if(!user){
+    location.href="login.html";
+    return;
+  }
+
+  // check admin
+  const adminSnap = await getDoc(doc(db,"users",user.uid));
+  if(!adminSnap.exists() || adminSnap.data().role !== "admin"){
+    alert("Access denied");
+    return;
+  }
+
+  // load user
+  const userSnap = await getDoc(doc(db,"users",uid));
+  if(!userSnap.exists()){
+    alert("User not found");
+    return;
+  }
+
+  const u = userSnap.data();
+  document.getElementById("name").innerText = u.name || "N/A";
+  document.getElementById("phone").innerText = u.phone || "N/A";
+  document.getElementById("balance").innerText = u.balance || 0;
+  document.getElementById("plan").innerText = u.currentPlan || "No Plan";
+
+  loadDeposits();
+  loadWithdraws();
+  loadTransactions();
+});
+
+async function loadDeposits(){
+  const q = query(collection(db,"deposits"), where("uid","==",uid));
+  const snap = await getDocs(q);
+  const box = document.getElementById("depositList");
+  box.innerHTML="";
+  snap.forEach(d=>{
+    const x=d.data();
+    box.innerHTML+=`
+      <tr>
+        <td>${x.amount}</td>
+        <td>${x.status}</td>
+        <td>${x.trxId || "-"}</td>
+      </tr>`;
+  });
+}
+
+async function loadWithdraws(){
+  const q = query(collection(db,"withdraws"), where("uid","==",uid));
+  const snap = await getDocs(q);
+  const box = document.getElementById("withdrawList");
+  box.innerHTML="";
+  snap.forEach(d=>{
+    const x=d.data();
+    box.innerHTML+=`
+      <tr>
+        <td>${x.amount}</td>
+        <td>${x.status}</td>
+      </tr>`;
+  });
+}
+
+async function loadTransactions(){
+  const q = query(collection(db,"transactions"), where("uid","==",uid));
+  const snap = await getDocs(q);
+  const box = document.getElementById("txList");
+  box.innerHTML="";
+  snap.forEach(d=>{
+    const x=d.data();
+    box.innerHTML+=`
+      <tr>
+        <td>${x.type}</td>
+        <td>${x.amount}</td>
+      </tr>`;
+  });
+}
+</script>
+
+</body>
+</html>
