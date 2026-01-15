@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<title>Biniyog | Admin User View</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body{
+  margin:0;
+  font-family: Arial, sans-serif;
+  background:#f5f6fa;
+}
+.header{
+  display:flex;
+  justify-content:flex-end;
+  align-items:center;
+  padding:10px 20px;
+  background:#0b1a33;
+  box-shadow:0 2px 10px rgba(0,0,0,.5);
+}
+.user-icon{
+  width:50px;
+  height:50px;
+  background:#18f2c2;
+  color:#000;
+  border-radius:50%;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  font-weight:bold;
+  font-size:22px;
+  cursor:pointer;
+  margin-left:10px;
+}
+.container{
+  max-width:1200px;
+  margin:auto;
+  padding:20px;
+}
+.card{
+  background:#1a2a4d;
+  padding:15px;
+  border-radius:8px;
+  box-shadow:0 2px 10px rgba(0,0,0,.6);
+  font-size:14px;
+  color:#fff;
+  margin-bottom:20px;
+  overflow-x:auto;
+}
+.card h2{
+  margin-top:0;
+  color:#ffc107;
+}
+.table{
+  width:100%;
+  border-collapse: collapse;
+  margin-top:10px;
+}
+.table th, .table td{
+  border:1px solid #3a4a6f;
+  padding:6px 10px;
+  text-align:left;
+}
+.table th{
+  background:#3a4a6f;
+  color:#ffc107;
+}
+.button{
+  padding:6px 12px;
+  border:none;
+  border-radius:5px;
+  cursor:pointer;
+  color:#fff;
+  font-size:12px;
+}
+.add-balance{background:#198754; margin-top:5px;}
+.footer{
+  padding:15px;
+  text-align:center;
+}
+.logout{
+  background:#18f2c2;
+  color:#000;
+  border:none;
+  padding:10px 18px;
+  border-radius:6px;
+  cursor:pointer;
+  font-size:14px;
+  font-weight:bold;
+}
+
+@media(max-width:768px){
+  .card{overflow-x:auto;}
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">
+  <div class="user-icon" onclick="goBack()">⬅</div>
+</div>
+
+<div class="container" id="content">
+
+  <!-- User Info Card -->
+  <div class="card" id="userInfoCard"></div>
+
+  <!-- Transactions -->
+  <div class="card" id="transactionsCard"></div>
+
+  <!-- Plans -->
+  <div class="card" id="plansCard"></div>
+
+</div>
+
+<div class="footer">
+  <button class="logout" onclick="logout()">Logout</button>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
+import { getFirestore, doc, getDoc, collection, getDocs, query, where, updateDoc, increment, serverTimestamp, addDoc } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
+
+// Firebase Config
+const firebaseConfig = {
+  apiKey: "AIzaSyBFsTzlRPoWHVXEHbKrPdwxslxZGa7Kqfw",
+  authDomain: "biniyog-95d00.firebaseapp.com",
+  projectId: "biniyog-95d00",
+  storageBucket: "biniyog-95d00.firebasestorage.app",
+  messagingSenderId: "523238228802",
+  appId: "1:523238228802:web:a65183bdc4c268f94efedb"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+/* Get UID from URL */
+const params = new URLSearchParams(window.location.search);
+const userUid = params.get("uid");
+
+const content = document.getElementById("content");
+const userInfoCard = document.getElementById("userInfoCard");
+const transactionsCard = document.getElementById("transactionsCard");
+const plansCard = document.getElementById("plansCard");
+
+/* UID Missing -> 404 */
+if(!userUid){
+  content.innerHTML = `
+    <div class="card" style="text-align:center; font-size:20px;">404 | User Not Found</div>
+    <div style="text-align:center; margin-top:10px;">
+      <a href="admin-dashboard.html" style="color:#ffc107; text-decoration:none;">⬅ Back to Admin Dashboard</a>
+    </div>`;
+  throw new Error("UID missing");
+}
+
+/* AUTH CHECK */
+onAuthStateChanged(auth, async(user)=>{
+  if(!user){
+    location.href="admin-login.html";
+    return;
+  }
+  const uSnap = await getDoc(doc(db,"users",user.uid));
+  if(!uSnap.exists() || uSnap.data().role!=="admin"){
+    alert("Access denied");
+    await signOut(auth);
+    location.href="admin-login.html";
+    return;
+  }
+  loadUserInfo();
+  loadTransactions();
+  loadPlans();
+});
+
+/* BACK */
+window.goBack=()=>location.href="admin-dashboard.html";
+
+/* LOAD USER INFO */
+async function loadUserInfo(){
+  const uSnap = await getDoc(doc(db,"users",userUid));
+  if(!uSnap.exists()){
+    userInfoCard.innerHTML = `<b>User not found</b>`;
+    return;
+  }
+  const u = uSnap.data();
+  userInfoCard.innerHTML = `
+    <h2>User Info</h2>
+    <p><b>Name:</b> ${u.name || "N/A"}</p>
+    <p><b>UID:</b> ${userUid}</p>
+    <p><b>Phone:</b> ${u.phone || "N/A"}</p>
+    <p><b>Balance:</b> ৳<span id="userBalance">${u.balance || 0}</span></p>
+    <input type="number" id="addBalanceInput" placeholder="Add Balance" style="padding:5px; margin-top:5px;">
+    <button class="button add-balance" onclick="addBalance()">Add</button>
+  `;
+}
+
+/* ADD BALANCE */
+window.addBalance = async ()=>{
+  const val = parseFloat(document.getElementById("addBalanceInput").value);
+  if(isNaN(val) || val<=0) return alert("Enter valid amount");
+  await updateDoc(doc(db,"users",userUid),{balance:increment(val)});
+  await addDoc(collection(db,"transactions"),{
+    uid:userUid,type:"credit",amount:val,status:"approved",createdAt:serverTimestamp()
+  });
+  document.getElementById("userBalance").innerText = 
+    (parseFloat(document.getElementById("userBalance").innerText)+val).toFixed(2);
+  document.getElementById("addBalanceInput").value="";
+};
+
+/* LOAD TRANSACTIONS */
+async function loadTransactions(){
+  const q = query(collection(db,"transactions"),where("uid","==",userUid));
+  const snap = await getDocs(q);
+  transactionsCard.innerHTML = `<h2>Transaction History</h2>`;
+  if(snap.empty){
+    transactionsCard.innerHTML += `<p>No transactions found</p>`;
+    return;
+  }
+  let html = `<table class="table"><tr><th>Type</th><th>Amount</th><th>Status</th><th>Date</th></tr>`;
+  snap.forEach(d=>{
+    const t = d.data();
+    const date = t.createdAt?.toDate ? t.createdAt.toDate().toLocaleString() : "-";
+    html += `<tr>
+      <td>${t.type || "-"}</td>
+      <td>৳${t.amount || 0}</td>
+      <td>${t.status || "-"}</td>
+      <td>${date}</td>
+    </tr>`;
+  });
+  html += `</table>`;
+  transactionsCard.innerHTML += html;
+}
+
+/* LOAD PLANS */
+async function loadPlans(){
+  const q = query(collection(db,"user_plans"),where("uid","==",userUid));
+  const snap = await getDocs(q);
+  plansCard.innerHTML = `<h2>Plan History</h2>`;
+  if(snap.empty){
+    plansCard.innerHTML += `<p>No plans found</p>`;
+    return;
+  }
+  let html = `<table class="table"><tr><th>Type</th><th>Status</th><th>Price</th><th>Earned</th><th>Days</th></tr>`;
+  snap.forEach(d=>{
+    const p = d.data();
+    html += `<tr>
+      <td>${p.type || "-"}</td>
+      <td>${p.status || "-"}</td>
+      <td>৳${p.price || 0}</td>
+      <td>৳${p.earned || 0}</td>
+      <td>${p.days || "-"}</td>
+    </tr>`;
+  });
+  html += `</table>`;
+  plansCard.innerHTML += html;
+}
+
+/* LOGOUT */
+window.logout = async ()=>{
+  await signOut(auth);
+  location.href="admin-login.html";
+};
+</script>
+
+</body>
+</html>
