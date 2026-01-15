@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<title>Biniyog | Admin Users</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body{
+  margin:0;
+  font-family:Arial, sans-serif;
+  background:#f5f6fa;
+}
+.header{
+  background:#0b1a33;
+  color:#fff;
+  padding:12px 20px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.header h2{margin:0;color:#18f2c2}
+.container{
+  max-width:1200px;
+  margin:auto;
+  padding:20px;
+}
+.top-actions{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-bottom:15px;
+}
+input, select, textarea{
+  padding:8px;
+  border-radius:5px;
+  border:1px solid #ccc;
+  font-size:14px;
+}
+textarea{resize:none}
+button{
+  padding:8px 12px;
+  border:none;
+  border-radius:5px;
+  cursor:pointer;
+  font-size:14px;
+}
+.primary{background:#18f2c2;color:#000}
+.bulk{background:#0d6efd;color:#fff}
+.users{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
+  gap:15px;
+}
+.user{
+  background:#1a2a4d;
+  color:#fff;
+  padding:15px;
+  border-radius:10px;
+  position:relative;
+  box-shadow:0 4px 10px rgba(0,0,0,.4);
+}
+.badge{
+  position:absolute;
+  top:-12px;
+  left:-12px;
+  background:#ffc107;
+  color:#000;
+  width:40px;
+  height:40px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:bold;
+}
+.user b{font-size:16px}
+.user .send{
+  width:100%;
+  margin-top:10px;
+  background:#198754;
+  color:#fff;
+}
+.history{
+  margin-top:30px;
+}
+.history h3{margin-bottom:10px}
+.history-item{
+  background:#fff;
+  padding:10px;
+  border-radius:6px;
+  margin-bottom:8px;
+  font-size:13px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">
+  <h2>👥 All Users</h2>
+  <button class="primary" onclick="location.href='admin.html'">⬅ Dashboard</button>
+</div>
+
+<div class="container">
+
+  <!-- TOP CONTROLS -->
+  <div class="top-actions">
+    <input type="text" id="search" placeholder="🔍 Search by name or phone">
+    <input type="text" id="title" placeholder="Message title">
+    <select id="type">
+      <option value="Notice">Notice</option>
+      <option value="Warning">Warning</option>
+      <option value="Bonus">Bonus</option>
+    </select>
+    <button class="bulk" onclick="bulkMessage()">📢 Bulk Message</button>
+  </div>
+
+  <textarea id="message" rows="3" placeholder="Write message..."></textarea>
+
+  <!-- USERS -->
+  <div class="users" id="users">Loading users...</div>
+
+  <!-- HISTORY -->
+  <div class="history">
+    <h3>📜 Admin Sent History</h3>
+    <div id="history">Loading history...</div>
+  </div>
+
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+import { getFirestore, collection, getDocs, addDoc, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBFsTzlRPoWHVXEHbKrPdwxslxZGa7Kqfw",
+  authDomain: "biniyog-95d00.firebaseapp.com",
+  projectId: "biniyog-95d00",
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const usersDiv=document.getElementById("users");
+const historyDiv=document.getElementById("history");
+let users=[];
+
+/* LOAD USERS */
+async function loadUsers(){
+  const snap = await getDocs(collection(db,"users"));
+  users = [];
+  snap.forEach(d => users.push({ uid: d.id, ...d.data() }));
+  renderUsers(users);
+}
+
+/* RENDER USERS */
+function renderUsers(list){
+  usersDiv.innerHTML = "";
+  if(list.length === 0){
+    usersDiv.innerHTML = "No users found";
+    return;
+  }
+  list.forEach((u, i)=>{
+    usersDiv.innerHTML += `
+      <div class="user">
+        <div class="badge">${String(i+1).padStart(2,'0')}</div>
+        <b>${u.name || "User"}</b><br>
+        📞 ${u.phone || "N/A"}<br>
+        💰 ৳${u.balance || 0}<br>
+        <button class="send" onclick="sendMessage('${u.uid}')">✉ Send Message</button>
+      </div>`;
+  });
+}
+
+/* SEARCH */
+document.getElementById("search").oninput = e => {
+  const val = e.target.value.toLowerCase();
+  renderUsers(users.filter(u => (u.name||"").toLowerCase().includes(val) || (u.phone||"").includes(val)));
+};
+
+/* SEND SINGLE MESSAGE */
+window.sendMessage = async (uid) => {
+  const msg = document.getElementById("message").value;
+  if(!msg) return alert("Write a message!");
+  await addDoc(collection(db,"messages"),{
+    uid: uid,
+    title: document.getElementById("title").value,
+    type: document.getElementById("type").value,
+    message: msg,
+    isRead: false,
+    createdAt: serverTimestamp()
+  });
+  alert("Message sent to user!");
+  document.getElementById("message").value = "";
+  loadHistory();
+};
+
+/* BULK MESSAGE */
+window.bulkMessage = async () => {
+  const msg = document.getElementById("message").value;
+  if(!msg) return alert("Write a message!");
+  for(const u of users){
+    await addDoc(collection(db,"messages"),{
+      uid: u.uid,
+      title: document.getElementById("title").value,
+      type: document.getElementById("type").value,
+      message: msg,
+      isRead: false,
+      createdAt: serverTimestamp()
+    });
+  }
+  alert("Bulk message sent!");
+  document.getElementById("message").value = "";
+  loadHistory();
+};
+
+/* LOAD HISTORY */
+async function loadHistory(){
+  const q = query(collection(db,"messages"), orderBy("createdAt","desc"));
+  const snap = await getDocs(q);
+  historyDiv.innerHTML = "";
+  if(snap.empty){
+    historyDiv.innerHTML = "No messages sent yet";
+    return;
+  }
+  snap.forEach(d=>{
+    const x = d.data();
+    historyDiv.innerHTML += `
+      <div class="history-item">
+        <b>${x.title}</b> (${x.type})<br>
+        ${x.message}<br>
+        <small>UID: ${x.uid}</small>
+      </div>`;
+  });
+}
+
+loadUsers();
+loadHistory();
+
+</script>
+
+</body>
+</html>
