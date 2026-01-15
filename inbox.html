@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Biniyog | Inbox</title>
+
+<style>
+body{
+  margin:0;
+  font-family:Arial, Helvetica, sans-serif;
+  background:#f2f2f2;
+}
+.header{
+  background:#d81b60;
+  color:#fff;
+  padding:14px 12px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+.header h2{
+  margin:0;
+  font-size:18px;
+}
+.backBtn{
+  cursor:pointer;
+  font-size:18px;
+  padding:4px 8px;
+  background:#fff;
+  color:#d81b60;
+  border-radius:6px;
+}
+.inbox{
+  margin:12px;
+  padding:12px;
+  background:#fff;
+  border-radius:10px;
+  box-shadow:0 3px 8px rgba(0,0,0,0.1);
+}
+.inbox-item{
+  padding:8px 10px;
+  border-bottom:1px solid #ddd;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  cursor:pointer;
+}
+.inbox-item:last-child{border-bottom:none;}
+.inbox-item.unread{background:#e0f7fa;}
+.inbox-item .message{
+  font-size:14px;
+  color:green; /* সব লেখা সবুজ */
+}
+.inbox-item .time{
+  font-size:12px;
+  color:green; /* সব লেখা সবুজ */
+}
+.scrollable{
+  max-height:70vh;
+  overflow-y:auto;
+}
+.no-messages{
+  text-align:center;
+  color:green; /* সব লেখা সবুজ */
+  font-size:14px;
+  margin-top:20px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">
+  <div class="backBtn" id="backBtn">← Back</div>
+  <h2>Inbox</h2>
+  <div></div>
+</div>
+
+<div class="inbox scrollable" id="inboxList">
+  <div class="no-messages">Loading messages...</div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBFsTzlRPoWHVXEHbKrPdwxslxZGa7Kqfw",
+  authDomain: "biniyog-95d00.firebaseapp.com",
+  projectId: "biniyog-95d00"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+const inboxList = document.getElementById("inboxList");
+const backBtn = document.getElementById("backBtn");
+
+backBtn.addEventListener("click", ()=>{
+  window.location.href = "dashboard.html";
+});
+
+onAuthStateChanged(auth, user => {
+  if(!user){
+    window.location.replace("index.html");
+    return;
+  }
+
+  const inboxRef = collection(db,"inbox");
+  const inboxQuery = query(inboxRef, orderBy("createdAt","desc"));
+
+  onSnapshot(inboxQuery, snapshot=>{
+    inboxList.innerHTML = "";
+    let hasMessages = false;
+
+    snapshot.forEach(docSnap=>{
+      const data = docSnap.data();
+      // নিশ্চিত করুন uid মেলে
+      if(data.uid === user.uid){
+        hasMessages = true;
+
+        const div = document.createElement("div");
+        div.classList.add("inbox-item");
+        if(!data.read) div.classList.add("unread");
+
+        const msgDiv = document.createElement("div");
+        msgDiv.classList.add("message");
+        msgDiv.innerText = data.message || "";
+
+        const timeDiv = document.createElement("div");
+        timeDiv.classList.add("time");
+        
+        // createdAt না থাকলে fallback
+        let date;
+        if(data.createdAt && data.createdAt.seconds){
+          date = new Date(data.createdAt.seconds*1000);
+        } else {
+          date = new Date();
+        }
+        timeDiv.innerText = date.toLocaleString();
+
+        div.appendChild(msgDiv);
+        div.appendChild(timeDiv);
+
+        div.addEventListener("click", async ()=>{
+          if(!data.read){
+            const docRef = doc(db,"inbox",docSnap.id);
+            await updateDoc(docRef, { read:true });
+          }
+          div.classList.remove("unread");
+        });
+
+        inboxList.appendChild(div);
+      }
+    });
+
+    if(!hasMessages){
+      inboxList.innerHTML = '<div class="no-messages">No messages yet.</div>';
+    }
+  });
+
+});
+</script>
+
+</body>
+</html>
