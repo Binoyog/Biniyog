@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<title>Biniyog | Admin Users & Inbox</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body, html{
+  margin:0;
+  padding:0;
+  font-family: Arial, sans-serif;
+  background:#f5f6fa;
+}
+
+/* Header */
+.header{
+  background:#0b1a33;
+  color:#fff;
+  padding:16px 30px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  box-shadow:0 4px 10px rgba(0,0,0,0.3);
+}
+.header h2{
+  margin:0;
+  font-size:28px;
+  color:#18f2c2;
+}
+.header button{
+  padding:10px 20px;
+  font-size:16px;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
+  background:#18f2c2;
+  color:#000;
+  font-weight:bold;
+}
+
+/* Container */
+.container{
+  max-width:1920px;
+  margin:auto;
+  padding:30px;
+}
+
+/* Top Actions */
+.top-actions{
+  display:flex;
+  gap:15px;
+  flex-wrap:wrap;
+  margin-bottom:20px;
+}
+.top-actions input, .top-actions select, textarea{
+  padding:12px;
+  border-radius:6px;
+  border:1px solid #ccc;
+  font-size:16px;
+}
+textarea{
+  width:100%;
+  resize:none;
+  margin-bottom:20px;
+  min-height:80px;
+}
+.top-actions button{
+  padding:12px 20px;
+  font-size:16px;
+  border-radius:6px;
+  cursor:pointer;
+}
+.primary{background:#18f2c2;color:#000;font-weight:bold;}
+.bulk{background:#0d6efd;color:#fff;font-weight:bold;}
+
+/* Users Grid */
+.users{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+  gap:20px;
+}
+.user{
+  background:#1a2a4d;
+  color:#fff;
+  padding:20px;
+  border-radius:12px;
+  position:relative;
+  box-shadow:0 6px 15px rgba(0,0,0,0.4);
+  transition: transform 0.2s;
+}
+.user:hover{
+  transform: translateY(-5px);
+}
+.badge{
+  position:absolute;
+  top:-15px;
+  left:-15px;
+  background:#ffc107;
+  color:#000;
+  width:50px;
+  height:50px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:bold;
+  font-size:18px;
+}
+.user b{font-size:18px}
+.user .send{
+  width:100%;
+  margin-top:12px;
+  background:#198754;
+  color:#fff;
+  font-size:16px;
+  padding:10px;
+  border-radius:6px;
+  cursor:pointer;
+  transition: background 0.2s;
+}
+.user .send:hover{
+  background:#0f6c45;
+}
+
+/* History Section */
+.history{
+  margin-top:40px;
+}
+.history h3{
+  font-size:22px;
+  margin-bottom:15px;
+  color:#0b1a33;
+}
+.history-item{
+  background:#fff;
+  padding:15px;
+  border-radius:8px;
+  margin-bottom:12px;
+  font-size:15px;
+  box-shadow:0 3px 10px rgba(0,0,0,0.2);
+}
+.history-item i{
+  font-size:12px;
+  color:#555;
+}
+
+/* Unread badge */
+.unread-badge{
+  background:#dc3545;
+  color:#fff;
+  padding:2px 6px;
+  font-size:12px;
+  border-radius:4px;
+  margin-left:6px;
+}
+
+@media(max-width:1024px){
+  .header h2{font-size:24px;}
+  .top-actions input, .top-actions select, textarea{font-size:14px;}
+  .user b{font-size:16px;}
+  .user .send{font-size:14px;}
+  .history h3{font-size:20px;}
+  .history-item{font-size:14px;}
+}
+@media(max-width:768px){
+  .header{flex-direction:column;align-items:flex-start;}
+  .top-actions{flex-direction:column;}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h2>👥 All Users</h2>
+  <button class="primary" onclick="location.href='admin.html'">⬅ Dashboard</button>
+</div>
+
+<div class="container">
+
+  <!-- Top Controls -->
+  <div class="top-actions">
+    <input type="text" id="search" placeholder="🔍 Search by phone">
+    <input type="text" id="title" placeholder="Message title">
+    <select id="type">
+      <option value="Notice">Notice</option>
+      <option value="Warning">Warning</option>
+      <option value="Bonus">Bonus</option>
+    </select>
+    <button class="bulk" onclick="bulkMessage()">📢 Bulk Message</button>
+  </div>
+
+  <textarea id="message" placeholder="Write your message here..."></textarea>
+
+  <!-- Users Grid -->
+  <div class="users" id="users">Loading users...</div>
+
+  <!-- Admin Sent History -->
+  <div class="history">
+    <h3>📜 Admin Sent History</h3>
+    <div id="history">Loading history...</div>
+  </div>
+
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+import { getFirestore, collection, getDocs, addDoc, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBFsTzlRPoWHVXEHbKrPdwxslxZGa7Kqfw",
+  authDomain: "biniyog-95d00.firebaseapp.com",
+  projectId: "biniyog-95d00",
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const usersDiv = document.getElementById("users");
+const historyDiv = document.getElementById("history");
+const searchInput = document.getElementById("search");
+const titleInput = document.getElementById("title");
+const typeSelect = document.getElementById("type");
+const messageInput = document.getElementById("message");
+
+let users = [];
+
+/* Load users */
+async function loadUsers(){
+  const snap = await getDocs(collection(db,"users"));
+  users = [];
+  snap.forEach(d=>{
+    users.push({id:d.id, ...d.data()});
+  });
+  renderUsers(users);
+}
+
+/* Render users */
+function renderUsers(list){
+  usersDiv.innerHTML = "";
+  list.forEach((u,i)=>{
+    usersDiv.innerHTML += `
+    <div class="user">
+      <div class="badge">${String(i+1).padStart(2,'0')}</div>
+      <b>${u.name || "User"}</b><br>
+      📞 ${u.phone || "N/A"}<br>
+      💰 ৳${u.balance || 0}
+      <button class="send" onclick="sendOne('${u.id}','${u.phone}')">✉ Send Message</button>
+    </div>`;
+  });
+}
+
+/* Search */
+searchInput.oninput = e=>{
+  const val = e.target.value.toLowerCase();
+  renderUsers(users.filter(u => (u.phone||"").toLowerCase().includes(val)));
+};
+
+/* Send single message */
+window.sendOne = async(uid, phone)=>{
+  const msg = messageInput.value.trim();
+  if(!msg) return alert("Write message");
+
+  // Add to inbox
+  await addDoc(collection(db,"inbox"),{
+    uid,
+    phone,
+    title: titleInput.value || "No Title",
+    type: typeSelect.value,
+    message: msg,
+    isRead: false,
+    createdAt: serverTimestamp()
+  });
+
+  // Add to admin_sent
+  await addDoc(collection(db,"admin_sent"),{
+    title: titleInput.value || "No Title",
+    message: msg,
+    type: typeSelect.value,
+    sentTo: [uid],
+    createdAt: serverTimestamp()
+  });
+
+  alert("Message sent to " + phone);
+  loadHistory();
+};
+
+/* Bulk message */
+window.bulkMessage = async ()=>{
+  const msg = messageInput.value.trim();
+  if(!msg) return alert("Write message");
+  let sentUids = [];
+  for(const u of users){
+    await addDoc(collection(db,"inbox"),{
+      uid: u.id,
+      phone: u.phone,
+      title: titleInput.value || "No Title",
+      type: typeSelect.value,
+      message: msg,
+      isRead: false,
+      createdAt: serverTimestamp()
+    });
+    sentUids.push(u.id);
+  }
+  await addDoc(collection(db,"admin_sent"),{
+    title: titleInput.value || "No Title",
+    message: msg,
+    type: typeSelect.value,
+    sentTo: sentUids,
+    createdAt: serverTimestamp()
+  });
+  alert("Bulk message sent to all users");
+  loadHistory();
+};
+
+/* Load admin sent history */
+async function loadHistory(){
+  historyDiv.innerHTML="";
+  const q = query(collection(db,"admin_sent"), orderBy("createdAt","desc"));
+  const snap = await getDocs(q);
+  if(snap.empty){
+    historyDiv.innerHTML="No history";
+    return;
+  }
+  snap.forEach(d=>{
+    const x = d.data();
+    const date = x.createdAt?.toDate ? x.createdAt.toDate().toLocaleString() : "";
+    historyDiv.innerHTML += `
+    <div class="history-item">
+      <b>${x.title}</b> (${x.type})<br>
+      ${x.message}<br>
+      <i>Sent: ${date}</i>
+    </div>`;
+  });
+}
+
+/* Initialize */
+loadUsers();
+loadHistory();
+
+</script>
+</body>
+</html>
