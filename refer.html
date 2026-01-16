@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<title>Biniyog | Referral Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body{
+  margin:0;
+  font-family: Arial, sans-serif;
+  background:#f5f6fa;
+  font-size:13px;
+}
+.container{
+  max-width:900px;
+  margin:auto;
+  padding:15px;
+}
+.card{
+  background:#1a2a4d;
+  padding:12px;
+  border-radius:8px;
+  color:#fff;
+  margin-bottom:12px;
+  box-shadow:0 2px 6px rgba(0,0,0,.5);
+}
+.card h2{
+  color:#ffc107;
+  margin-top:0;
+  font-size:16px;
+}
+.ref-link{
+  background:#18f2c2;
+  padding:4px 8px;
+  border-radius:4px;
+  display:inline-block;
+  margin:4px 0;
+  cursor:pointer;
+  color:#000;
+  font-weight:bold;
+  font-size:13px;
+}
+.level{
+  font-weight:bold;
+  margin-left:6px;
+}
+.vip{color:#ffeb3b;}
+.platinum{color:#ff44aa;}
+.bonus{color:#00ff00;font-weight:bold;}
+.refer-card{
+  background:#2a3a5d;
+  padding:6px 10px;
+  border-radius:5px;
+  margin-bottom:4px;
+  font-size:12px;
+}
+.refer-card .bonus{margin-left:6px;}
+button{
+  padding:4px 8px;
+  border:none;
+  border-radius:4px;
+  cursor:pointer;
+  font-size:12px;
+  font-weight:bold;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="card">
+    <h2>Referral Dashboard</h2>
+    <div>
+      <span>আপনার রেফার লিঙ্ক:</span>
+      <span class="ref-link" id="refLink">Loading...</span>
+      <button onclick="copyLink()">Copy</button>
+    </div>
+    <p>মোট রেফার করা হয়েছে: <span id="totalRefers">0</span> জন</p>
+    <p>আপনার লেভেল: <span id="refLevel" class="level">Normal</span></p>
+    <p>বোনাস: <span id="refBonus" class="bonus">৳0</span></p>
+  </div>
+
+  <div class="card">
+    <h2>রেফার লিস্ট</h2>
+    <div id="referList">Loading...</div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
+import { getFirestore, collection, getDocs, query, where, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBFsTzlRPoWHVXEHbKrPdwxslxZGa7Kqfw",
+  authDomain: "biniyog-95d00.firebaseapp.com",
+  projectId: "biniyog-95d00",
+  storageBucket: "biniyog-95d00.firebasestorage.app",
+  messagingSenderId: "523238228802",
+  appId: "1:523238228802:web:a65183bdc4c268f94efedb"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+let currentUser;
+
+onAuthStateChanged(auth, async(user)=>{
+  if(!user){ location.href="login.html"; return; }
+  currentUser = user;
+  await loadReferralDashboard();
+});
+
+async function loadReferralDashboard(){
+  const userSnap = await getDoc(doc(db,"users",currentUser.uid));
+  if(!userSnap.exists()) return;
+  const uData = userSnap.data();
+  const refCode = uData.refCode || currentUser.uid;
+
+  document.getElementById("refLink").innerText = `https://biniyog.com/register?ref=${refCode}`;
+
+  // Load referred users
+  const q = query(collection(db,"users"),where("referredBy","==",refCode));
+  const snap = await getDocs(q);
+
+  let totalBonus = 0;
+  const referListDiv = document.getElementById("referList");
+  referListDiv.innerHTML = "";
+  snap.forEach(docSnap=>{
+    const d = docSnap.data();
+    let bonus = 0;
+    if(d.hasDeposited) bonus = 110;
+    totalBonus += bonus;
+
+    referListDiv.innerHTML += `
+      <div class="refer-card">
+        <b>${d.name || "N/A"}</b> - ${d.phone || "-"} 
+        ${d.hasDeposited ? `<span class="bonus">(+৳110)</span>` : ""}
+      </div>
+    `;
+  });
+
+  document.getElementById("totalRefers").innerText = snap.size;
+  document.getElementById("refBonus").innerText = `৳${totalBonus}`;
+
+  // Set Level
+  const levelEl = document.getElementById("refLevel");
+  if(snap.size>=250){ levelEl.innerText="Platinum"; levelEl.className="level platinum"; }
+  else if(snap.size>=100){ levelEl.innerText="VIP"; levelEl.className="level vip"; }
+  else{ levelEl.innerText="Normal"; levelEl.className="level"; }
+}
+
+function copyLink(){
+  const text = document.getElementById("refLink").innerText;
+  navigator.clipboard.writeText(text);
+  alert("Copied to clipboard!");
+}
+</script>
+</body>
+</html>
