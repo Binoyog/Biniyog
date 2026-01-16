@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<title>Biniyog | Admin User View</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body{margin:0;font-family:Arial,sans-serif;background:#f5f6fa;font-size:11px}
+.header{display:flex;justify-content:flex-end;align-items:center;padding:6px 12px;background:#0b1a33;box-shadow:0 2px 10px rgba(0,0,0,.5)}
+.user-icon{width:35px;height:35px;background:#18f2c2;color:#000;border-radius:50%;display:flex;justify-content:center;align-items:center;font-weight:bold;font-size:16px;cursor:pointer}
+.container{max-width:1200px;margin:auto;padding:8px}
+.card{background:#1a2a4d;padding:8px;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,.6);color:#fff}
+.user-section{border-bottom:1px solid #3a4a6f;padding-bottom:6px;margin-bottom:6px}
+.flex-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.table{width:100%;border-collapse:collapse;font-size:10px;margin-top:5px}
+.table th,.table td{border:1px solid #3a4a6f;padding:3px}
+.table th{background:#3a4a6f;color:#ffc107}
+.deposit{color:#00ff00;font-weight:bold}
+.withdraw{color:#ffeb3b;font-weight:bold}
+.button{padding:3px 6px;font-size:10px;border:none;border-radius:3px;cursor:pointer}
+.add-balance{background:#198754;color:#fff}
+.subtract-balance{background:#ff4444;color:#fff}
+.expand-btn{background:#ffc107;color:#000;font-weight:bold}
+.logout{background:#18f2c2;color:#000;border:none;padding:5px 10px;border-radius:4px;font-weight:bold}
+</style>
+</head>
+
+<body>
+<div class="header">
+  <div class="user-icon" onclick="location.href='admin-dashboard.html'">⬅</div>
+</div>
+
+<div class="container">
+  <div class="card" id="usersList">Loading users...</div>
+</div>
+
+<div style="text-align:center;padding:10px">
+  <button class="logout" onclick="logout()">Logout</button>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
+import { getFirestore, collection, getDocs, doc, getDoc, updateDoc, increment, addDoc, serverTimestamp, query, where } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBFsTzlRPoWHVXEHbKrPdwxslxZGa7Kqfw",
+  authDomain: "biniyog-95d00.firebaseapp.com",
+  projectId: "biniyog-95d00",
+  storageBucket: "biniyog-95d00.firebasestorage.app",
+  messagingSenderId: "523238228802",
+  appId: "1:523238228802:web:a65183bdc4c268f94efedb"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+onAuthStateChanged(auth, async(user)=>{
+  if(!user) return location.href="admin-login.html";
+  const snap = await getDoc(doc(db,"users",user.uid));
+  if(!snap.exists() || snap.data().role!=="admin"){
+    alert("Access denied"); await signOut(auth);
+    return location.href="admin-login.html";
+  }
+  loadUsers();
+});
+
+async function loadUsers(){
+  const box = document.getElementById("usersList");
+  box.innerHTML = "";
+  const usersSnap = await getDocs(collection(db,"users"));
+  usersSnap.forEach(async uDoc=>{
+    const u=uDoc.data(), uid=uDoc.id;
+    const tSnap = await getDocs(query(collection(db,"transactions"),where("uid","==",uid)));
+    let dep=0,wit=0;
+    tSnap.forEach(d=>{
+      const t=d.data();
+      if(t.type==="credit"||t.type==="deposit") dep+=t.amount||0;
+      if(t.type==="debit"||t.type==="withdraw") wit+=t.amount||0;
+    });
+
+    const div=document.createElement("div");
+    div.className="user-section";
+    div.innerHTML=`
+      <div class="flex-row">
+        <b>${u.name||"N/A"}</b>
+        <span>📱 ${u.phone||"-"}</span>
+        <span>💰 ৳<span id="bal-${uid}">${u.balance||0}</span></span>
+      </div>
+      <div class="flex-row">
+        <span class="deposit">Deposit: ৳${dep}</span>
+        <span class="withdraw">Withdraw: ৳${wit}</span>
+      </div>
+      <div class="flex-row">
+        <input id="amt-${uid}" type="number" style="width:60px">
+        <button class="button add-balance" onclick="changeBal('${uid}',1)">Add</button>
+        <button class="button subtract-balance" onclick="changeBal('${uid}',-1)">Sub</button>
+        <button class="button expand-btn" onclick="toggle('${uid}')">Show ▼</button>
+      </div>
+      <div id="his-${uid}" style="display:none"></div>
+    `;
+    box.appendChild(div);
+  });
+}
+
+window.changeBal=async(uid,dir)=>{
+  const v=Number(document.getElementById(`amt-${uid}`).value);
+  if(!v) return;
+  await updateDoc(doc(db,"users",uid),{balance:increment(v*dir)});
+  await addDoc(collection(db,"transactions"),{
+    uid,type:dir>0?"credit":"debit",amount:v,status:"approved",createdAt:serverTimestamp()
+  });
+  document.getElementById(`bal-${uid}`).innerText=(Number(document.getElementById(`bal-${uid}`).innerText)+v*dir);
+};
+
+window.toggle=async(uid)=>{
+  const h=document.getElementById(`his-${uid}`);
+  if(h.style.display==="block"){h.style.display="none";return;}
+  h.style.display="block";
+  h.innerHTML="Loading...";
+
+  const snap=await getDocs(query(collection(db,"transactions"),where("uid","==",uid)));
+  const tx=[];
+  snap.forEach(d=>tx.push(d.data()));
+  tx.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+
+  let html=`<h4>Transactions</h4><table class="table">
+  <tr><th>Type</th><th>Amount</th><th>Date</th></tr>`;
+  tx.forEach(t=>{
+    html+=`<tr>
+      <td>${t.type}</td>
+      <td>৳${t.amount}</td>
+      <td>${t.createdAt?.toDate().toLocaleString()||"-"}</td>
+    </tr>`;
+  });
+  html+="</table>";
+  h.innerHTML=html;
+};
+
+window.logout=async()=>{await signOut(auth);location.href="admin-login.html";}
+</script>
+</body>
+</html>
