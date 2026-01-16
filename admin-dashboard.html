@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<title>Biniyog | Admin Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body{
+  margin:0;
+  font-family: Arial, sans-serif;
+  background:#f5f6fa;
+  font-size:10px;
+}
+.header{
+  display:flex;
+  justify-content:flex-end;
+  align-items:center;
+  padding:4px 8px;
+  background:#0b1a33;
+  box-shadow:0 1px 4px rgba(0,0,0,.5);
+  font-size:10px;
+}
+.view-icon{
+  padding:2px 6px;
+  background:#ffc107;
+  color:#000;
+  border-radius:3px;
+  font-size:9px;
+  cursor:pointer;
+  font-weight:bold;
+}
+.container{
+  max-width:1200px;
+  margin:auto;
+  padding:8px;
+}
+.dashboard{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.card{
+  flex:1;
+  min-width:200px;
+  background:#1a2a4d;
+  padding:8px;
+  border-radius:5px;
+  box-shadow:0 1px 5px rgba(0,0,0,.5);
+  font-size:10px;
+  color:#fff;
+  max-height:calc(100vh - 120px);
+  overflow-y:auto;
+}
+.card h2{
+  margin-top:0;
+  color:#ffc107;
+  font-size:11px;
+}
+.item{
+  border-bottom:1px solid #3a4a6f;
+  padding:4px 0;
+}
+.row{
+  display:flex;
+  gap:4px;
+  margin-top:3px;
+}
+button{
+  flex:1;
+  padding:3px;
+  border:none;
+  border-radius:3px;
+  cursor:pointer;
+  color:#fff;
+  font-size:9px;
+}
+.approve{background:#198754}
+.reject{background:#dc3545}
+/* logout bottom */
+.footer{
+  padding:6px;
+  text-align:center;
+}
+.logout{
+  background:#18f2c2;
+  color:#000;
+  border:none;
+  padding:4px 10px;
+  border-radius:4px;
+  cursor:pointer;
+  font-size:10px;
+  font-weight:bold;
+}
+@media(max-width:768px){
+  .dashboard{flex-direction:column;}
+  .card{max-height:none;}
+}
+</style>
+</head>
+<body>
+<!-- HEADER -->
+<div class="header">
+  <div class="view-icon" onclick="openUserView()">👁 View</div>
+</div>
+<!-- CONTENT -->
+<div class="container">
+  <div class="dashboard">
+    <!-- Deposits -->
+    <div class="card">
+      <h2>Pending Deposits</h2>
+      <div id="depositList">Loading...</div>
+      <p><b>Total Pending Deposits:</b> <span id="depositNumber">0</span></p>
+    </div>
+    <!-- Withdraws -->
+    <div class="card">
+      <h2>Pending Withdraws</h2>
+      <div id="withdrawList">Loading...</div>
+      <p><b>Total Pending Withdraws:</b> <span id="withdrawNumber">0</span></p>
+    </div>
+  </div>
+</div>
+<!-- LOGOUT BOTTOM -->
+<div class="footer">
+  <button class="logout" onclick="logout()">Logout</button>
+</div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
+import { getFirestore, doc, getDoc, collection, query, where, getDocs, updateDoc, addDoc, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+const firebaseConfig = {
+  apiKey: "AIzaSyBFsTzlRPoWHVXEHbKrPdwxslxZGa7Kqfw",
+  authDomain: "biniyog-95d00.firebaseapp.com",
+  projectId: "biniyog-95d00",
+  storageBucket: "biniyog-95d00.firebasestorage.app",
+  messagingSenderId: "523238228802",
+  appId: "1:523238228802:web:a65183bdc4c268f94efedb"
+};
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+/* AUTH CHECK */
+onAuthStateChanged(auth, async(user)=>{
+  if(!user){
+    location.href="admin-login.html";
+    return;
+  }
+  const uSnap = await getDoc(doc(db,"users",user.uid));
+  if(!uSnap.exists() || uSnap.data().role!=="admin"){
+    alert("Access denied");
+    await signOut(auth);
+    location.href="admin-login.html";
+    return;
+  }
+  loadDeposits();
+  loadWithdraws();
+});
+/* VIEW USER DASHBOARD */
+window.openUserView=()=>{
+  location.href="admin-user-view.html";
+};
+/* LOAD DEPOSITS */
+async function loadDeposits(){
+  const list=document.getElementById("depositList");
+  list.innerHTML="";
+  const q=query(collection(db,"deposits"),where("status","==","pending"));
+  const snap=await getDocs(q);
+  document.getElementById("depositNumber").innerText=snap.size;
+  if(snap.empty){
+    list.innerHTML="No pending deposits";
+    return;
+  }
+  for(const d of snap.docs){
+    const x=d.data();
+    const uSnap=await getDoc(doc(db,"users",x.uid));
+    if(!uSnap.exists()) continue;
+    const user=uSnap.data();
+    list.innerHTML+=`
+      <div class="item">
+        <b>Phone:</b> ${user.phone || "N/A"}<br>
+        <b>Balance:</b> ৳${user.balance || 0}<br>
+        <b>Amount:</b> ৳${x.amount}<br>
+        <b>Method:</b> ${x.method || "N/A"}<br>
+        <b>Submitted Phone:</b> ${x.customerPhone || "N/A"}<br>
+        <div class="row">
+          <button class="approve" onclick="approveDeposit('${d.id}')">Approve</button>
+          <button class="reject" onclick="rejectDeposit('${d.id}')">Reject</button>
+        </div>
+      </div>`;
+  }
+}
+/* LOAD WITHDRAWS */
+async function loadWithdraws(){
+  const list=document.getElementById("withdrawList");
+  list.innerHTML="";
+  const q=query(collection(db,"withdraws"),where("status","==","pending"));
+  const snap=await getDocs(q);
+  document.getElementById("withdrawNumber").innerText=snap.size;
+  if(snap.empty){
+    list.innerHTML="No pending withdraws";
+    return;
+  }
+  for(const d of snap.docs){
+    const x=d.data();
+    const uSnap=await getDoc(doc(db,"users",x.uid));
+    if(!uSnap.exists()) continue;
+    const user=uSnap.data();
+    const submittedPhone =
+      x.customerPhone || x.withdrawPhone || x.phone || x.number || "N/A";
+    list.innerHTML+=`
+      <div class="item">
+        <b>Phone:</b> ${user.phone || "N/A"}<br>
+        <b>Balance:</b> ৳${user.balance || 0}<br>
+        <b>Amount:</b> ৳${x.amount}<br>
+        <b>Method:</b> ${x.method || "N/A"}<br>
+        <b>Submitted Phone:</b> ${submittedPhone}<br>
+        <div class="row">
+          <button class="approve" onclick="approveWithdraw('${d.id}')">Approve</button>
+          <button class="reject" onclick="rejectWithdraw('${d.id}')">Reject</button>
+        </div>
+      </div>`;
+  }
+}
+/* ACTIONS */
+window.approveDeposit=async(id)=>{
+  const ref=doc(db,"deposits",id);
+  const s=await getDoc(ref);
+  if(!s.exists()) return;
+  const d=s.data();
+  await updateDoc(ref,{status:"approved",approvedAt:serverTimestamp()});
+  await updateDoc(doc(db,"users",d.uid),{balance:increment(d.amount)});
+  // 🔹 REFERRAL BONUS LOGIC START
+  if(d.refCodeUsed){
+    const refSnap = await getDocs(query(collection(db,"users"),where("refCode","==",d.refCodeUsed)));
+    if(!refSnap.empty){
+      const refUserDoc = refSnap.docs[0];
+      const refUserData = refUserDoc.data();
+      if(!refUserData.bonusGiventrue){
+        await updateDoc(refUserDoc.ref,{balance:increment(110),bonusGiventrue:true});
+        await addDoc(collection(db,"referrals"),{
+          uid:d.uid,
+          refCodeUsed:d.refCodeUsed,
+          bonusGiventrue:true,
+          timestamp:serverTimestamp()
+        });
+      }
+    }
+  }
+  // 🔹 REFERRAL BONUS LOGIC END
+  await addDoc(collection(db,"transactions"),{
+    uid:d.uid,type:"deposit",amount:d.amount,status:"approved",createdAt:serverTimestamp()
+  });
+  loadDeposits();
+};
+window.rejectDeposit=async(id)=>{
+  await updateDoc(doc(db,"deposits",id),{status:"rejected"});
+  loadDeposits();
+};
+window.approveWithdraw=async(id)=>{
+  const ref=doc(db,"withdraws",id);
+  const s=await getDoc(ref);
+  if(!s.exists()) return;
+  const w=s.data();
+  await updateDoc(ref,{status:"approved",approvedAt:serverTimestamp()});
+  await updateDoc(doc(db,"users",w.uid), {balance:increment(-w.amount)});
+  await addDoc(collection(db,"transactions"),{
+    uid:w.uid,type:"withdraw",amount:w.amount,status:"approved",createdAt:serverTimestamp()
+  });
+  loadWithdraws();
+};
+window.rejectWithdraw=async(id)=>{
+  await updateDoc(doc(db,"withdraws",id),{status:"rejected"});
+  loadWithdraws();
+};
+window.logout=async()=>{
+  await signOut(auth);
+  location.href="admin-login.html";
+};
+</script>
+</body>
+</html>
