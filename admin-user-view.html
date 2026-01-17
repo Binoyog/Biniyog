@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Biniyog | Admin User Live Dashboard</title>
+<style>
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f5f6fa;}
+.header{background:#d81b60;color:#fff;padding:14px;display:flex;justify-content:space-between;align-items:center;}
+.header h2{margin:0;font-size:18px;}
+.balance-section, .totals-section, .history-section{background:#fff;margin:12px;padding:12px;border-radius:10px;box-shadow:0 3px 6px rgba(0,0,0,0.1);}
+.history-section h3{margin:0 0 10px 0;color:#d81b60;}
+.btn{padding:6px 12px;margin:4px;border:none;border-radius:6px;cursor:pointer;background:#d81b60;color:#fff;}
+.btn:disabled{background:#ccc;}
+table{width:100%;border-collapse:collapse;}
+table th, table td{padding:8px;text-align:left;border-bottom:1px solid #ddd;font-size:14px;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h2>Admin → User Dashboard</h2>
+  <button id="backBtn" class="btn">⬅ Back to Admin</button>
+</div>
+
+<div class="balance-section">
+  <strong>Name:</strong> <span id="userName">Loading...</span><br>
+  <strong>Phone:</strong> <span id="userPhone">Loading...</span><br>
+  <strong>Balance:</strong> ৳ <span id="userBalance">0</span>
+</div>
+
+<div class="totals-section">
+  <strong>Total Deposit:</strong> ৳ <span id="totalDeposit">0</span><br>
+  <strong>Total Withdraw:</strong> ৳ <span id="totalWithdraw">0</span>
+</div>
+
+<div class="history-section">
+  <h3>Deposit / Withdraw History</h3>
+  <table id="txnTable">
+    <thead>
+      <tr><th>Type</th><th>Amount</th><th>Method</th><th>Status</th><th>Date</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<div class="history-section">
+  <h3>Task / Plan History</h3>
+  <table id="taskTable">
+    <thead>
+      <tr><th>Plan Name</th><th>Invested</th><th>Earned</th><th>Status</th><th>End Time</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+import { getAuth,onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
+import { 
+  getFirestore,doc,getDoc,onSnapshot,collection,query,where,orderBy 
+} from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBFsTzlRPoWHVXEHbKrPdwxslxZGa7Kqfw",
+  authDomain: "biniyog-95d00.firebaseapp.com",
+  projectId: "biniyog-95d00"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+const params = new URLSearchParams(window.location.search);
+const uid = params.get("uid");
+
+if(!uid){
+  alert("No UID provided");
+  location.href="admin-dashboard.html";
+}
+
+// Elements
+const userNameEl = document.getElementById("userName");
+const userPhoneEl = document.getElementById("userPhone");
+const userBalanceEl = document.getElementById("userBalance");
+const totalDepositEl = document.getElementById("totalDeposit");
+const totalWithdrawEl = document.getElementById("totalWithdraw");
+const txnTableBody = document.querySelector("#txnTable tbody");
+const taskTableBody = document.querySelector("#taskTable tbody");
+const backBtn = document.getElementById("backBtn");
+
+backBtn.addEventListener("click",()=>location.href="admin-dashboard.html");
+
+// Auth + Admin check
+onAuthStateChanged(auth, async(user)=>{
+  if(!user) location.href="index.html";
+
+  const snap = await getDoc(doc(db,"users",user.uid));
+  if(!snap.exists() || snap.data().role!=="admin"){
+    alert("Access Denied");
+    location.href="dashboard.html";
+  }
+
+  loadUserData();
+  loadTransactions();
+  loadTasks();
+});
+
+// Load User Info
+function loadUserData(){
+  const userRef = doc(db,"users",uid);
+  onSnapshot(userRef,snap=>{
+    if(snap.exists()){
+      const data = snap.data();
+      userNameEl.innerText = data.name || "N/A";
+      userPhoneEl.innerText = data.phone || "N/A";
+      userBalanceEl.innerText = data.balance || 0;
+    }
+  });
+}
+
+// Load Transactions
+function loadTransactions(){
+  const txnRef = collection(db,"transactions");
+  const q = query(txnRef,where("uid","==",uid),orderBy("createdAt","desc"));
+  onSnapshot(q,snap=>{
+    let totalDeposit = 0;
+    let totalWithdraw = 0;
+    txnTableBody.innerHTML = "";
+    snap.forEach(doc=>{
+      const t = doc.data();
+      if(t.type==="deposit") totalDeposit += t.amount||0;
+      if(t.type==="withdraw") totalWithdraw += t.amount||0;
+
+      txnTableBody.innerHTML += `
+        <tr>
+          <td>${t.type}</td>
+          <td>৳ ${t.amount||0}</td>
+          <td>${t.method||""}</td>
+          <td>${t.status||""}</td>
+          <td>${t.createdAt?.toDate().toLocaleString()||""}</td>
+        </tr>
+      `;
+    });
+    totalDepositEl.innerText = totalDeposit;
+    totalWithdrawEl.innerText = totalWithdraw;
+  });
+}
+
+// Load Tasks / Plans
+function loadTasks(){
+  const taskRef = collection(db,"user_plans");
+  const q = query(taskRef,where("uid","==",uid),orderBy("endAt","desc"));
+  onSnapshot(q,snap=>{
+    taskTableBody.innerHTML = "";
+    snap.forEach(doc=>{
+      const d = doc.data();
+      taskTableBody.innerHTML += `
+        <tr>
+          <td>${d.planName}</td>
+          <td>৳ ${d.price||0}</td>
+          <td>৳ ${d.earned||0}</td>
+          <td>${d.status||"running"}</td>
+          <td>${d.endAt ? new Date(d.endAt).toLocaleString() : ""}</td>
+        </tr>
+      `;
+    });
+  });
+}
+</script>
+
+</body>
+</html>
