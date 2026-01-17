@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Biniyog | Admin User View</title>
+<style>
+body{
+  margin:0;
+  font-family: Arial, sans-serif;
+  background:#f5f6fa;
+}
+.header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  background:#d81b60;
+  color:#fff;
+  padding:12px 16px;
+}
+.header h2{margin:0;font-size:20px;}
+.logoutBtn{
+  background:#fff;color:#d81b60;border:none;padding:6px 12px;
+  border-radius:8px;cursor:pointer;
+}
+.user-list{padding:12px;}
+.user-card{
+  background:#fff;
+  border-radius:10px;
+  padding:12px;
+  margin-bottom:12px;
+  box-shadow:0 3px 8px rgba(0,0,0,0.1);
+}
+.user-card h3{margin:0;font-size:16px;color:#d81b60;}
+.row{margin:6px 0;font-size:14px;}
+button.action-btn{
+  padding:4px 8px;margin-right:6px;
+  border:none;border-radius:6px;cursor:pointer;
+}
+.add-btn{background:#22c55e;color:#fff;}
+.sub-btn{background:#ef4444;color:#fff;}
+.history-btn{background:#3b82f6;color:#fff;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h2>Admin | Users</h2>
+  <button class="logoutBtn" id="logoutBtn">Logout</button>
+</div>
+
+<div class="user-list" id="userList">
+  <p>Loading users...</p>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
+import { 
+  getFirestore, collection, onSnapshot, doc, getDoc, updateDoc, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBFsTzlRPoWHVXEHbKrPdwxslxZGa7Kqfw",
+  authDomain: "biniyog-95d00.firebaseapp.com",
+  projectId: "biniyog-95d00"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+const userListEl = document.getElementById("userList");
+const logoutBtn = document.getElementById("logoutBtn");
+
+logoutBtn.addEventListener("click",async()=>{
+  await signOut(auth);
+  window.location.replace("index.html");
+});
+
+onAuthStateChanged(auth, admin=>{
+  if(!admin) location.href="index.html";
+
+  // Load all users
+  const usersCol = collection(db,"users");
+  onSnapshot(usersCol, snap=>{
+    userListEl.innerHTML="";
+    snap.forEach(async userDoc=>{
+      const userData = userDoc.data();
+      const uid = userDoc.id;
+
+      // Create card
+      const card = document.createElement("div");
+      card.className = "user-card";
+      card.id = `user-${uid}`;
+      card.innerHTML=`
+        <h3>${userData.name || "No Name"} | ${userData.phone}</h3>
+        <div class="row">Balance: ৳ <span id="balance-${uid}">${userData.balance || 0}</span></div>
+        <div class="row">Deposit: ৳ <span id="deposit-${uid}">0</span> | Withdraw: ৳ <span id="withdraw-${uid}">0</span></div>
+        <div class="row">
+          <button class="action-btn add-btn" id="add-${uid}">Add Balance</button>
+          <button class="action-btn sub-btn" id="sub-${uid}">Subtract Balance</button>
+          <button class="action-btn history-btn" id="history-${uid}">History</button>
+        </div>
+      `;
+      userListEl.appendChild(card);
+
+      // Load transactions for totals
+      const transactionsCol = collection(db,"transactions");
+      onSnapshot(transactionsCol, txSnap=>{
+        const txs = txSnap.docs.map(d=>d.data()).filter(t=>t.uid===uid);
+        const totalDeposit = txs.filter(t=>t.type==="deposit"||t.type==="credit").reduce((sum,t)=>sum+(t.amount||0),0);
+        const totalWithdraw = txs.filter(t=>t.type==="withdraw"||t.type==="debit").reduce((sum,t)=>sum+(t.amount||0),0);
+
+        document.getElementById(`deposit-${uid}`).innerText = totalDeposit;
+        document.getElementById(`withdraw-${uid}`).innerText = totalWithdraw;
+      });
+
+      // Add / Subtract balance
+      document.getElementById(`add-${uid}`).addEventListener("click",async()=>{
+        const amt = Number(prompt("Amount to Add:"));
+        if(isNaN(amt) || amt<=0) return alert("Invalid amount");
+        const userRef = doc(db,"users",uid);
+        await updateDoc(userRef,{balance: (userData.balance || 0)+amt});
+        alert("Balance added successfully");
+      });
+
+      document.getElementById(`sub-${uid}`).addEventListener("click",async()=>{
+        const amt = Number(prompt("Amount to Subtract:"));
+        if(isNaN(amt) || amt<=0) return alert("Invalid amount");
+        if(amt > (userData.balance||0)) return alert("Insufficient balance");
+        const userRef = doc(db,"users",uid);
+        await updateDoc(userRef,{balance: (userData.balance || 0)-amt});
+        alert("Balance subtracted successfully");
+      });
+
+      // History button
+      document.getElementById(`history-${uid}`).addEventListener("click",()=>{
+        window.open(`transaction.html?uid=${uid}`,"_blank");
+      });
+
+    });
+  });
+});
+</script>
+
+</body>
+</html>
