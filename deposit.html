@@ -86,10 +86,15 @@ button{
 
   <div class="info">
     <b>Bkash, Nagad</b><br>
-    ক্যাশআউট নাম্বার:  <b>01938433939</b><br>
+  
     Minimum Deposit: <b>500৳</b>
   </div>
-
+ক্যাশআউট নাম্বার:
+<span class="copy-wrap">
+  <b id="cashoutNumber">01938433939</b>
+  <button type="button" class="copy-btn" onclick="copyNumber()">কপি</button>
+</span>
+<br>
   <form id="depositForm">
     <label>Payment Method</label>
     <select id="method" required>
