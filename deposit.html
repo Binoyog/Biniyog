@@ -8,7 +8,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600&display=swap" rel="stylesheet">
 
 <style>
-/* 🔒 DESIGN UNCHANGED */
 *{ box-sizing:border-box; }
 body{
   margin:0;
@@ -40,8 +39,30 @@ h2{
   font-size:14px;
   margin-bottom:18px;
   line-height:1.6;
-  color:#2f4f4f;
+  color:#334155;
 }
+.info b{
+  color:#0f766e;
+}
+
+.copy-wrap{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+}
+.copy-btn{
+  padding:4px 8px;
+  font-size:12px;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
+  background:#0f766e;
+  color:#fff;
+}
+.copy-btn:active{
+  transform:scale(0.95);
+}
+
 label{
   margin-top:14px;
   display:block;
@@ -86,15 +107,15 @@ button{
 
   <div class="info">
     <b>Bkash, Nagad</b><br>
-  
+    ক্যাশআউট নাম্বার:
+    <span class="copy-wrap">
+      <b id="cashoutNumber">01938433939</b>
+      <button type="button" class="copy-btn" onclick="copyNumber()">কপি</button>
+    </span>
+    <br>
     Minimum Deposit: <b>500৳</b>
   </div>
-ক্যাশআউট নাম্বার:
-<span class="copy-wrap">
-  <b id="cashoutNumber">01938433939</b>
-  <button type="button" class="copy-btn" onclick="copyNumber()">কপি</button>
-</span>
-<br>
+
   <form id="depositForm">
     <label>Payment Method</label>
     <select id="method" required>
@@ -110,7 +131,6 @@ button{
     <label>Transaction ID</label>
     <input type="text" id="trxId" placeholder="Transaction ID লিখুন" required>
 
-    <!-- ✅ NEW OPTION -->
     <label>আপনার নাম্বার</label>
     <input type="tel" id="userPhone" placeholder="আপনার মোবাইল নাম্বার লিখুন" required>
 
@@ -124,6 +144,7 @@ button{
   </div>
 </div>
 
+<!-- Firebase + Logic -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
 import { getAuth,onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
@@ -149,15 +170,10 @@ onAuthStateChanged(auth,user=>{
   }
 });
 
-const methodEl = document.getElementById("method");
-const amountEl = document.getElementById("amount");
-const trxIdEl  = document.getElementById("trxId");
-const userPhoneEl = document.getElementById("userPhone");
-
 document.getElementById("depositForm").addEventListener("submit",async e=>{
   e.preventDefault();
 
-  const method = methodEl.value;
+  const method = method.value;
   const amount = Number(amountEl.value);
   const trxId  = trxIdEl.value.trim();
   const userPhone = userPhoneEl.value.trim();
@@ -170,7 +186,7 @@ document.getElementById("depositForm").addEventListener("submit",async e=>{
   await addDoc(collection(db,"deposits"),{
     uid: currentUser.uid,
     phone: currentUser.phoneNumber || "",
-    customerPhone: userPhone,   // ✅ NEW FIELD
+    customerPhone: userPhone,
     type: "deposit",
     method,
     amount,
@@ -179,13 +195,23 @@ document.getElementById("depositForm").addEventListener("submit",async e=>{
     createdAt: serverTimestamp()
   });
 
-  alert("ডিপোজিট সাবমিট হয়েছে, ট্রানজেকশন হিস্ট্রি চেক করুন");
+  alert("ডিপোজিট সাবমিট হয়েছে");
   location.href="transaction.html";
 });
 
 document.getElementById("backHome").onclick = ()=>{
   location.href="dashboard.html";
 };
+</script>
+
+<!-- Copy Function -->
+<script>
+function copyNumber(){
+  const number = document.getElementById("cashoutNumber").innerText;
+  navigator.clipboard.writeText(number).then(()=>{
+    alert("নাম্বার কপি হয়েছে ✔");
+  });
+}
 </script>
 
 </body>
