@@ -41,9 +41,7 @@ h2{
   line-height:1.6;
   color:#334155;
 }
-.info b{
-  color:#0f766e;
-}
+.info b{ color:#0f766e; }
 
 .copy-wrap{
   display:inline-flex;
@@ -59,14 +57,8 @@ h2{
   background:#0f766e;
   color:#fff;
 }
-.copy-btn:active{
-  transform:scale(0.95);
-}
 
-label{
-  margin-top:14px;
-  display:block;
-}
+label{ margin-top:14px; display:block; }
 input,select{
   width:100%;
   padding:12px;
@@ -97,6 +89,23 @@ button{
   text-align:center;
   font-size:13px;
 }
+
+/* Toast */
+.toast{
+  position:fixed;
+  bottom:20px;
+  left:50%;
+  transform:translateX(-50%);
+  background:#0f766e;
+  color:#fff;
+  padding:10px 18px;
+  border-radius:20px;
+  font-size:14px;
+  opacity:0;
+  pointer-events:none;
+  transition:.3s;
+}
+.toast.show{ opacity:1; }
 </style>
 </head>
 
@@ -110,9 +119,8 @@ button{
     ক্যাশআউট নাম্বার:
     <span class="copy-wrap">
       <b id="cashoutNumber">01938433939</b>
-      <button type="button" class="copy-btn" onclick="copyNumber()">কপি</button>
-    </span>
-    <br>
+      <button type="button" id="copyBtn" class="copy-btn" onclick="copyNumber()">কপি</button>
+    </span><br>
     Minimum Deposit: <b>500৳</b>
   </div>
 
@@ -126,90 +134,38 @@ button{
     </select>
 
     <label>Amount (৳)</label>
-    <input type="number" id="amount" min="500" placeholder="Minimum 500৳" required>
+    <input type="number" id="amount" min="500" required>
 
     <label>Transaction ID</label>
-    <input type="text" id="trxId" placeholder="Transaction ID লিখুন" required>
+    <input type="text" id="trxId" required>
 
     <label>আপনার নাম্বার</label>
-    <input type="tel" id="userPhone" placeholder="আপনার মোবাইল নাম্বার লিখুন" required>
+    <input type="tel" id="userPhone" required>
 
-    <button type="submit" class="submit-btn">Submit Deposit</button>
+    <button class="submit-btn">Submit Deposit</button>
   </form>
 
-  <button id="backHome" class="back-btn">⬅ Dashboard এ ফিরে যান</button>
+  <button class="back-btn" onclick="location.href='dashboard.html'">⬅ Dashboard</button>
 
-  <div class="note">
-    ডিপোজিট দ্রুত করতে সঠিক ট্রানজেকশন আইডি ব্যবহার করুন
-  </div>
+  <div class="note">সঠিক ট্রানজেকশন আইডি ব্যবহার করুন</div>
 </div>
 
-<!-- Firebase + Logic -->
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-import { getAuth,onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
-import { getFirestore,collection,addDoc,serverTimestamp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+<div id="toast" class="toast">নাম্বার কপি হয়েছে ✔</div>
 
-const firebaseConfig = {
-  apiKey: "AIzaSyBFsTzlRPoWHVXEHbKrPdwxslxZGa7Kqfw",
-  authDomain: "biniyog-95d00.firebaseapp.com",
-  projectId: "biniyog-95d00"
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-
-let currentUser = null;
-
-onAuthStateChanged(auth,user=>{
-  if(!user){
-    location.href="index.html";
-  }else{
-    currentUser = user;
-  }
-});
-
-document.getElementById("depositForm").addEventListener("submit",async e=>{
-  e.preventDefault();
-
-  const method = method.value;
-  const amount = Number(amountEl.value);
-  const trxId  = trxIdEl.value.trim();
-  const userPhone = userPhoneEl.value.trim();
-
-  if(!method || amount < 500 || !trxId || userPhone.length < 11){
-    alert("সব তথ্য সঠিকভাবে পূরণ করুন");
-    return;
-  }
-
-  await addDoc(collection(db,"deposits"),{
-    uid: currentUser.uid,
-    phone: currentUser.phoneNumber || "",
-    customerPhone: userPhone,
-    type: "deposit",
-    method,
-    amount,
-    trxId,
-    status: "pending",
-    createdAt: serverTimestamp()
-  });
-
-  alert("ডিপোজিট সাবমিট হয়েছে");
-  location.href="transaction.html";
-});
-
-document.getElementById("backHome").onclick = ()=>{
-  location.href="dashboard.html";
-};
-</script>
-
-<!-- Copy Function -->
 <script>
 function copyNumber(){
   const number = document.getElementById("cashoutNumber").innerText;
+  const btn = document.getElementById("copyBtn");
+  const toast = document.getElementById("toast");
+
   navigator.clipboard.writeText(number).then(()=>{
-    alert("নাম্বার কপি হয়েছে ✔");
+    btn.innerText="Copied ✔";
+    toast.classList.add("show");
+
+    setTimeout(()=>{
+      btn.innerText="কপি";
+      toast.classList.remove("show");
+    },2000);
   });
 }
 </script>
