@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Biniyog | Admin User View</title>
+<style>
+  body { margin:0; font-family:Arial,sans-serif; background:#f5f6fa; color:#333; }
+  header { background:#4a76a8; color:#fff; padding:15px 20px; text-align:center; font-size:20px; }
+  .container { padding:20px; }
+  table { width:100%; border-collapse:collapse; background:#fff; box-shadow:0 2px 5px rgba(0,0,0,0.1); }
+  th, td { padding:10px 15px; text-align:left; border-bottom:1px solid #ddd; font-size:12px; }
+  th { background:#4a76a8; color:#fff; }
+  button.view-btn { background:#27ae60; color:#fff; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; font-size:12px; }
+  button.view-btn:hover { background:#219150; }
+  .no-users { text-align:center; padding:20px; color:#555; }
+</style>
+</head>
+<body>
+
+<header>Admin | User View</header>
+
+<div class="container">
+  <table id="usersTable">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Name</th>
+        <th>Phone Number</th>
+        <th>Balance</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="no-users"><td colspan="5">Loading users...</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<script type="module">
+  // Firebase v12 Modular SDK
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
+  import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBFsTzlRPoWHVXEHbKrPdwxslxZGa7Kqfw",
+    authDomain: "biniyog-95d00.firebaseapp.com",
+    projectId: "biniyog-95d00",
+    storageBucket: "biniyog-95d00.firebasestorage.app",
+    messagingSenderId: "523238228802",
+    appId: "1:523238228802:web:a65183bdc4c268f94efedb"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  const usersTableBody = document.querySelector("#usersTable tbody");
+
+  async function loadUsers() {
+    usersTableBody.innerHTML = "";
+    try {
+      const usersSnapshot = await getDocs(collection(db, "users"));
+      if (usersSnapshot.empty) {
+        usersTableBody.innerHTML = `<tr class="no-users"><td colspan="5">No users found.</td></tr>`;
+        return;
+      }
+
+      let counter = 1;
+      usersSnapshot.forEach(doc => {
+        const user = doc.data();
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${counter++}</td>
+          <td>${user.name || '-'}</td>
+          <td>${user.phone || '-'}</td>
+          <td>${user.balance || 0}</td>
+          <td><button class="view-btn" onclick="viewUser('${doc.id}')">View</button></td>
+        `;
+        usersTableBody.appendChild(tr);
+      });
+    } catch (err) {
+      console.error("Error fetching users:", err);
+      usersTableBody.innerHTML = `<tr class="no-users"><td colspan="5">Error loading users.</td></tr>`;
+    }
+  }
+
+  window.viewUser = function(userId) {
+    window.location.href = `admin-dashboard.html?user=${userId}`;
+  }
+
+  loadUsers();
+</script>
+
+</body>
+</html>
