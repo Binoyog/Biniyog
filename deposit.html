@@ -204,9 +204,9 @@ document.getElementById("backHome").onclick = ()=>{
 };
 </script>
 
-<!-- Copy Function -->
+<!-- Copy Logic -->
 <script>
-  function copyNumber(btn){
+function copyNumber(btn){
   const number = document.getElementById("cashoutNumber").innerText;
   navigator.clipboard.writeText(number).then(()=>{
     btn.innerText = "কপিট";
