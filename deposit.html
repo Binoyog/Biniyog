@@ -110,7 +110,7 @@ button{
     ক্যাশআউট নাম্বার:
     <span class="copy-wrap">
       <b id="cashoutNumber">01938433939</b>
-      <button type="button" class="copy-btn" onclick="copyNumber()">কপি</button>
+      <button type="button" class="copy-btn" onclick="copyNumber()">copy</button>
     </span>
     <br>
     Minimum Deposit: <b>500৳</b>
@@ -209,8 +209,8 @@ document.getElementById("backHome").onclick = ()=>{
 function copyNumber(btn){
   const number = document.getElementById("cashoutNumber").innerText;
   navigator.clipboard.writeText(number).then(()=>{
-    btn.innerText = "কপিট";
-    setTimeout(()=>btn.innerText="কপি",2000);
+    btn.innerText = "copyed";
+    setTimeout(()=>btn.innerText="copyed",2000);
   });
 }
 </script>
