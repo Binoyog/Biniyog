@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin | User View</title>
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.15.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.15.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.15.0/firebase-auth-compat.js"></script>
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    background: #f5f6fa;
+}
+.header {
+    background: #2f3640;
+    color: #fff;
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.header h2 { margin: 0; }
+.container { padding: 20px; }
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+table th, table td {
+    padding: 10px;
+    border: 1px solid #ccc;
+    text-align: center;
+}
+button {
+    padding: 5px 10px;
+    margin: 2px;
+    cursor: pointer;
+}
+.history-section {
+    margin-top: 30px;
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+    <h2>Admin Dashboard | User View</h2>
+    <button onclick="logout()">Logout</button>
+</div>
+
+<div class="container">
+    <h3>All Users</h3>
+    <table id="usersTable">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Name</th>
+                <th>Phone</th>
+                <th>Balance</th>
+                <th>Total Deposit</th>
+                <th>Total Withdraw</th>
+                <th>Add Balance</th>
+                <th>Subtract Balance</th>
+                <th>Histories</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Users will be injected here -->
+        </tbody>
+    </table>
+
+    <div class="history-section" id="historySection" style="display:none;">
+        <h3>History for <span id="historyUser"></span></h3>
+        <div>
+            <h4>Deposit History</h4>
+            <ul id="depositHistory"></ul>
+        </div>
+        <div>
+            <h4>Withdraw History</h4>
+            <ul id="withdrawHistory"></ul>
+        </div>
+        <div>
+            <h4>Task History</h4>
+            <ul id="taskHistory"></ul>
+        </div>
+        <button onclick="closeHistory()">Close History</button>
+    </div>
+</div>
+
+<script>
+  // Firebase config
+  const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_AUTH_DOMAIN",
+    projectId: "YOUR_PROJECT_ID",
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+
+  const usersTable = document.getElementById('usersTable').getElementsByTagName('tbody')[0];
+
+  // Fetch users in real-time
+  db.collection('users').onSnapshot(snapshot => {
+      usersTable.innerHTML = '';
+      let i = 1;
+      snapshot.forEach(doc => {
+          const user = doc.data();
+          const tr = document.createElement('tr');
+
+          tr.innerHTML = `
+            <td>${i++}</td>
+            <td>${user.name || ''}</td>
+            <td>${user.phone || ''}</td>
+            <td>${user.balance || 0}</td>
+            <td>${user.totalDeposit || 0}</td>
+            <td>${user.totalWithdraw || 0}</td>
+            <td><button onclick="modifyBalance('${doc.id}', 'add')">Add</button></td>
+            <td><button onclick="modifyBalance('${doc.id}', 'subtract')">Subtract</button></td>
+            <td><button onclick="showHistory('${doc.id}', '${user.name}')">View</button></td>
+          `;
+          usersTable.appendChild(tr);
+      });
+  });
+
+  function modifyBalance(uid, action){
+      const amount = parseFloat(prompt(`Enter amount to ${action}:`));
+      if(isNaN(amount)) return alert('Invalid amount');
+
+      const userRef = db.collection('users').doc(uid);
+      db.runTransaction(async (t) => {
+          const doc = await t.get(userRef);
+          if(!doc.exists) throw "User does not exist";
+          let balance = doc.data().balance || 0;
+          balance = action === 'add' ? balance + amount : balance - amount;
+          t.update(userRef, { balance });
+      }).then(() => alert('Balance updated!'))
+        .catch(err => alert(err));
+  }
+
+  function showHistory(uid, name){
+      document.getElementById('historySection').style.display = 'block';
+      document.getElementById('historyUser').innerText = name;
+
+      const depositList = document.getElementById('depositHistory');
+      const withdrawList = document.getElementById('withdrawHistory');
+      const taskList = document.getElementById('taskHistory');
+
+      depositList.innerHTML = withdrawList.innerHTML = taskList.innerHTML = '';
+
+      db.collection('deposits').where('uid', '==', uid).get().then(snap => {
+          snap.forEach(doc => {
+              const data = doc.data();
+              const li = document.createElement('li');
+              li.textContent = `${data.amount} | ${data.date || ''} | ${data.status || ''}`;
+              depositList.appendChild(li);
+          });
+      });
+
+      db.collection('withdraws').where('uid', '==', uid).get().then(snap => {
+          snap.forEach(doc => {
+              const data = doc.data();
+              const li = document.createElement('li');
+              li.textContent = `${data.amount} | ${data.date || ''} | ${data.status || ''}`;
+              withdrawList.appendChild(li);
+          });
+      });
+
+      db.collection('tasks').where('uid', '==', uid).get().then(snap => {
+          snap.forEach(doc => {
+              const data = doc.data();
+              const li = document.createElement('li');
+              li.textContent = `${data.title || ''} | ${data.status || ''} | ${data.date || ''}`;
+              taskList.appendChild(li);
+          });
+      });
+  }
+
+  function closeHistory(){
+      document.getElementById('historySection').style.display = 'none';
+  }
+
+  function logout(){
+      firebase.auth().signOut().then(() => location.href = 'login.html');
+  }
+
+</script>
+</body>
+</html>
