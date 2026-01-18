@@ -277,7 +277,7 @@ onAuthStateChanged(auth, async (user)=>{
   /* Live Balance Listener */
   onSnapshot(userRef,(docSnap)=>{
     if(docSnap.exists()){
-      liveBalance = docSnap.data().balance || wait;
+      liveBalance = docSnap.data().balance || 0;
       if(showBalance){
         balanceBtn.innerText = "৳ " + liveBalance;
       }
