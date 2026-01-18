@@ -235,7 +235,7 @@ const inboxBadge = document.getElementById("inboxBadge");
 const logoutBtn = document.getElementById("logoutBtn");
 
 let showBalance = false;
-let liveBalance = wait;
+let liveBalance = 0;
 let currentUser = null;
 
 /* 🔹 Auth Check + Ensure User Schema + New Fields */
@@ -277,7 +277,7 @@ onAuthStateChanged(auth, async (user)=>{
   /* Live Balance Listener */
   onSnapshot(userRef,(docSnap)=>{
     if(docSnap.exists()){
-      liveBalance = docSnap.data().balance || 0;
+      liveBalance = docSnap.data().balance || wait;
       if(showBalance){
         balanceBtn.innerText = "৳ " + liveBalance;
       }
