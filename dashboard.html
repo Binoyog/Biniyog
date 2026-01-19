@@ -279,7 +279,7 @@ onAuthStateChanged(auth, async (user)=>{
     if(docSnap.exists()){
       liveBalance = docSnap.data().balance || 0;
       if(showBalance){
-        balanceBtn.innerText = "→ " + liveBalance;
+        balanceBtn.innerText = "© " + liveBalance;
       }
     }
   });
