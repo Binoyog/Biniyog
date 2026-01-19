@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<title>Biniyog | Withdraw</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+body{
+  margin:0;
+  font-family:'Hind Siliguri',sans-serif;
+  background:#f2f4f7;
+}
+.header{
+  background:#0f172a;
+  color:#22c55e;
+  padding:15px;
+  text-align:center;
+  font-size:20px;
+  font-weight:600;
+}
+.container{
+  padding:20px;
+}
+.card{
+  background:#fff;
+  border-radius:12px;
+  padding:20px;
+  box-shadow:0 4px 10px rgba(0,0,0,.08);
+}
+.balance{
+  font-size:18px;
+  margin-bottom:15px;
+}
+input,select{
+  width:100%;
+  padding:12px;
+  margin-top:10px;
+  border-radius:8px;
+  border:1px solid #ddd;
+  font-size:15px;
+}
+button{
+  width:100%;
+  padding:12px;
+  margin-top:15px;
+  background:#22c55e;
+  color:#fff;
+  border:none;
+  border-radius:10px;
+  font-size:16px;
+  cursor:pointer;
+}
+button:disabled{
+  background:#94a3b8;
+}
+.note{
+  margin-top:10px;
+  font-size:13px;
+  color:#666;
+  text-align:center;
+}
+.back{
+  margin-top:15px;
+  text-align:center;
+}
+.back a{
+  color:#0f172a;
+  text-decoration:none;
+  font-weight:500;
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">Withdraw Request</div>
+
+<div class="container">
+  <div class="card">
+
+    <div class="balance">
+      বর্তমান ব্যালেন্স: ৳ <span id="balance">0</span>
+    </div>
+
+    <input type="text" id="mobile" placeholder="মোবাইল নাম্বার">
+
+    <select id="method">
+      <option value="">Payment Method নির্বাচন করুন</option>
+      <option value="Bkash">Bkash</option>
+      <option value="Nagad">Nagad</option>
+      <option value="Rocket">Rocket</option>
+    </select>
+
+    <input type="number" id="amount" placeholder="Withdraw Amount">
+
+    <button id="submitBtn">Withdraw Submit</button>
+
+    <div class="note">
+      Withdraw শুধুমাত্র আপনার ব্যালেন্স থেকে করা হবে (মজা/ডেমো অ্যাপ্লিকেশন)
+    </div>
+
+    <div class="back">
+      <a href="dashboard.html">← Back to Dashboard</a>
+    </div>
+
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+import { getAuth,onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
+import { 
+  getFirestore,doc,getDoc,addDoc,
+  collection,serverTimestamp 
+} from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+
+/* Firebase config */
+const firebaseConfig = {
+  apiKey: "AIzaSyBFsTzlRPoWHVXEHbKrPdwxslxZGa7Kqfw",
+  authDomain: "biniyog-95d00.firebaseapp.com",
+  projectId: "biniyog-95d00"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+let currentUser = null;
+let currentBalance = 0;
+
+const balanceEl = document.getElementById("balance");
+const submitBtn = document.getElementById("submitBtn");
+
+/* ===============================
+   AUTH + LOAD BALANCE
+=================================*/
+onAuthStateChanged(auth, async(user)=>{
+  if(!user){
+    location.href="login.html";
+    return;
+  }
+
+  currentUser = user;
+
+  const snap = await getDoc(doc(db,"users",user.uid));
+  if(snap.exists()){
+    currentBalance = snap.data().balance || 0;
+    balanceEl.innerText = currentBalance;
+  }
+});
+
+/* ===============================
+   SUBMIT WITHDRAW (SUCCESS OR FAIL -> transaction.html)
+=================================*/
+submitBtn.onclick = async ()=>{
+  const mobile = document.getElementById("mobile").value.trim();
+  const method = document.getElementById("method").value;
+  const amount = Number(document.getElementById("amount").value);
+
+  // Disable button + Processing text
+  submitBtn.disabled = true;
+  submitBtn.innerText = "Processing...";
+
+  try {
+    // Validation + balance check
+    if(!mobile || !method || amount <= 0 || amount > currentBalance || mobile.length < 11){
+      alert("সব তথ্য সঠিকভাবে পূরণ করুন (সঠিক ফোন নম্বর ও ব্যালেন্স চেক করুন)");
+      submitBtn.disabled = false;
+      submitBtn.innerText = "Withdraw Submit";
+      return;
+    }
+
+    /* Withdraw request */
+    await addDoc(collection(db,"withdraws"),{
+      uid: currentUser.uid,
+      phone: mobile,
+      method: method,
+      amount: amount,
+      status: "pending",
+      createdAt: serverTimestamp()
+    });
+
+    /* Transaction history */
+    await addDoc(collection(db,"transactions"),{
+      uid: currentUser.uid,
+      type: "withdraw",
+      amount: amount,
+      status: "pending",
+      method: method,
+      phone: mobile,
+      createdAt: serverTimestamp()
+    });
+
+  } catch(err) {
+    console.error("Withdraw failed:", err);
+  } finally {
+    location.href = "transaction.html";
+  }
+};
+</script>
+
+</body>
+</html>
