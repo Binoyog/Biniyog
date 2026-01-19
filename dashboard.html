@@ -100,8 +100,26 @@ body{
 .menu span{margin-top:6px}
 
 /* Banner */
-.banner{margin:12px}
-.banner img{width:100%;border-radius:10px;display:block;}
+.banner{
+  margin:12px;
+  overflow: hidden;
+  border-radius: 10px;
+}
+
+/* Slider */
+.slider{
+  display: flex;
+  width: 300%;
+  transition: transform 0.5s ease;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  scroll-snap-type: x mandatory;
+}
+.slide{
+  width: 100%;
+  flex-shrink: 0;
+  scroll-snap-align: start;
+}
 
 /* Inbox */
 .inbox{
@@ -174,9 +192,13 @@ body{
   <a href="about.html">ℹ️<span>About</span></a>
 </div>
 
-<!-- Banner: GitHub Image Slider -->
+<!-- Banner Slider -->
 <div class="banner">
-  <img id="slideImg" src="https://raw.githubusercontent.com/Binoyog/biniyog/main/assets/Big-offer.png" alt="Banner Slider">
+  <div class="slider" id="slider">
+    <img class="slide" src="https://raw.githubusercontent.com/Binoyog/biniyog/main/assets/Big-offer.png" alt="Banner 1">
+    <img class="slide" src="https://raw.githubusercontent.com/Binoyog/biniyog/main/assets/Big-offer.png" alt="Banner 2">
+    <img class="slide" src="https://raw.githubusercontent.com/Binoyog/biniyog/main/assets/Big-offer.png" alt="Banner 3">
+  </div>
 </div>
 
 <!-- Inbox Section -->
@@ -223,6 +245,7 @@ const inboxSection = document.getElementById("inboxSection");
 const inboxIcon = document.getElementById("inboxIcon");
 const inboxBadge = document.getElementById("inboxBadge");
 const logoutBtn = document.getElementById("logoutBtn");
+const slider = document.getElementById("slider");
 
 let showBalance = false;
 let liveBalance = 0;
@@ -347,21 +370,22 @@ claimBonusBtn.addEventListener("click", async ()=>{
   balanceBtn.innerText = "৳ " + newBalance;
 });
 
-/* Slider Image */
-const sliderImages = [
-  "https://raw.githubusercontent.com/Binoyog/biniyog/main/assets/Big-offer.png",
-  "https://raw.githubusercontent.com/Binoyog/biniyog/main/assets/Big-offer.png",
-  "https://raw.githubusercontent.com/Binoyog/biniyog/main/assets/Big-offer.png"
-];
+/* ===== Slider Auto + Swipe + Scroll ===== */
+let index = 0;
+function autoSlide() {
+  index++;
+  if (index >= slider.children.length) index = 0;
+  slider.scrollTo({
+    left: slider.children[index].offsetLeft,
+    behavior: "smooth"
+  });
+}
+let auto = setInterval(autoSlide, 2000);
 
-let slideIndex = 0;
-const slideImg = document.getElementById("slideImg");
-
-setInterval(() => {
-  slideIndex = (slideIndex + 1) % sliderImages.length;
-  slideImg.src = sliderImages[slideIndex];
-}, 2000);
-
+slider.addEventListener("scroll", () => {
+  clearInterval(auto);
+  auto = setInterval(autoSlide, 2000);
+});
 </script>
 
 </body>
