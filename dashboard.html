@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Biniyog | Dashboard</title>
+
+<style>
+body{
+  margin:0;
+  font-family:Arial, Helvetica, sans-serif;
+  background:#f2f2f2;
+}
+
+/* Header */
+.header{
+  background:#d81b60;
+  color:#fff;
+  padding:14px 12px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+.header .left{
+  display:flex;
+  align-items:center;
+  gap:35px;
+}
+.balance{
+  background:#fff;
+  color:#d81b60;
+  padding:6px 12px;
+  border-radius:20px;
+  font-size:14px;
+  cursor:pointer;
+}
+.logout, .inbox-icon{
+  font-size:18px;
+  cursor:pointer;
+  padding:4px 8px;
+  border-radius:6px;
+  position:relative;
+}
+
+/* Inbox Badge */
+.inbox-badge{
+  position:absolute;
+  top:-6px;
+  right:-6px;
+  background:#22c55e;
+  color:#fff;
+  font-size:10px;
+  font-weight:bold;
+  padding:2px 5px;
+  border-radius:50%;
+}
+
+/* Notice & Bonus */
+.notice{
+  background:#f9a825;
+  margin:12px;
+  padding:10px 14px;
+  border-radius:6px;
+  font-size:14px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  color:green;
+}
+.bonus-section{
+  background:#22c55e;
+  color:#fff;
+  padding:10px 12px;
+  border-radius:10px;
+  text-align:center;
+  font-size:14px;
+  cursor:pointer;
+}
+.bonus-section:hover{
+  background:#16a34a;
+}
+
+/* Menu */
+.menu{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:12px;
+  padding:12px;
+}
+.menu a{
+  background:#fff;
+  border-radius:50%;
+  height:70px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+  font-size:13px;
+  color:#000;
+  text-decoration:none;
+}
+.menu span{margin-top:6px}
+
+/* Banner */
+.banner{margin:12px}
+.banner img{width:100%;border-radius:10px}
+
+/* Inbox & Notice Board */
+.inbox, .notice-board{
+  background:#fff;
+  margin:12px;
+  padding:12px;
+  border-radius:10px;
+  box-shadow:0 3px 8px rgba(0,0,0,0.1);
+}
+.inbox h3, .notice-board h3{
+  margin-top:0;
+  color:#d81b60;
+}
+.inbox p, .notice-board p{
+  font-size:14px;
+  margin:5px 0;
+  color:green;
+}
+.scrollable{
+  max-height:120px;
+  overflow-y:auto;
+}
+
+/* Logout at bottom */
+.fixed-logout{
+  position:relative;
+  bottom:0;
+  display:block;
+  width:auto;
+  min-width:60px;
+  padding:4px 10px;
+  font-size:12px;
+  text-align:center;
+  background:#d81b60;
+  color:#fff;
+  cursor:pointer;
+  border-radius:8px;
+  margin:12px auto;
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">
+  <div class="left">
+    <strong id="luckyBtn">🎯 Lucky Bet</strong>
+    <div class="balance" id="balanceBtn">Tap To Balance</div>
+  </div>
+  <div class="icons">
+    <div class="inbox-icon" id="inboxIcon">📨
+      <span class="inbox-badge" id="inboxBadge" style="display:none;">0</span>
+    </div>
+  </div>
+</div>
+
+<div class="notice">
+  <span>ডেমো বিনিয়োগ প্ল্যাটফর্ম (শুধু মজা/প্র্যাকটিস)</span>
+  <div class="bonus-section" id="claimBonusBtn">Claim Today's Reward</div>
+</div>
+
+<div class="menu">
+  <a href="task.html">📋<span>Task</span></a>
+  <a href="deposit.html">💰<span>Deposit</span></a>
+  <a href="withdraw.html">🏧<span>Withdraw</span></a>
+  <a href="plan.html">📦<span>Plan</span></a>
+  <a href="profile.html">👤<span>Profile</span></a>
+  <a href="refer.html">👥<span>Refer</span></a>
+  <a href="transaction.html">🔄<span>Transaction</span></a>
+  <a href="about.html">ℹ️<span>About</span></a>
+</div>
+
+<div class="banner">
+  <img src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1200&q=60">
+</div>
+
+<!-- Inbox Section -->
+<div class="inbox" id="inboxSection" style="display:none;">
+  <h3>Inbox</h3>
+  <div class="scrollable" id="inboxList">
+    <p>No messages yet.</p>
+  </div>
+</div>
+
+<!-- Notice Board Section -->
+<div class="notice-board">
+  <h3>Notice Board→New Plan</h3>
+  <div class="scrollable" id="noticeList">
+    <p>প্লান শুরুর এমাউন্ট মাত্র ৩৯০ (ডেমো)</p>
+  </div>
+</div>
+
+<div class="fixed-logout" id="logoutBtn">⎋ Logout</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import {
+  getFirestore,
+  doc,
+  collection,
+  onSnapshot,
+  getDoc,
+  setDoc,
+  updateDoc,
+  query,
+  orderBy,
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBFsTzlRPoWHVXEHbKrPdwxslxZGa7Kqfw",
+  authDomain: "biniyog-95d00.firebaseapp.com",
+  projectId: "biniyog-95d00"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+const balanceBtn = document.getElementById("balanceBtn");
+const luckyBtn = document.getElementById("luckyBtn");
+const claimBonusBtn = document.getElementById("claimBonusBtn");
+const inboxList = document.getElementById("inboxList");
+const noticeList = document.getElementById("noticeList");
+const inboxSection = document.getElementById("inboxSection");
+const inboxIcon = document.getElementById("inboxIcon");
+const inboxBadge = document.getElementById("inboxBadge");
+const logoutBtn = document.getElementById("logoutBtn");
+
+let showBalance = false;
+let liveBalance = 0;
+let currentUser = null;
+
+onAuthStateChanged(auth, async (user)=>{
+  if(!user){
+    window.location.replace("index.html");
+    return;
+  }
+  currentUser = user;
+
+  const userRef = doc(db,"users",user.uid);
+  const snap = await getDoc(userRef);
+  const today = new Date().toISOString().split("T")[0];
+
+  const baseData = {
+    uid: user.uid,
+    name: snap.exists() ? snap.data().name || "" : "",
+    phone: snap.exists() ? snap.data().phone || "" : "",
+    role: snap.exists() ? snap.data().role || "user" : "user",
+    balance: snap.exists() ? snap.data().balance || 0 : 0,
+    loginStreak: snap.exists() ? snap.data().loginStreak || 0 : 0,
+    lastLoginDate: snap.exists() ? snap.data().lastLoginDate || "" : today,
+    createdAt: snap.exists() ? snap.data().createdAt || serverTimestamp() : serverTimestamp(),
+
+    totalDeposit: snap.exists() ? snap.data().totalDeposit || 0 : 0,
+    totalWithdraw: snap.exists() ? snap.data().totalWithdraw || 0 : 0,
+    depositHistory: snap.exists() ? snap.data().depositHistory || [] : [],
+    withdrawHistory: snap.exists() ? snap.data().withdrawHistory || [] : [],
+    totalRefer: snap.exists() ? snap.data().totalRefer || 0 : 0
+  };
+
+  if(!snap.exists()){
+    await setDoc(userRef, baseData);
+  } else {
+    await updateDoc(userRef, baseData);
+  }
+
+  onSnapshot(userRef,(docSnap)=>{
+    if(docSnap.exists()){
+      liveBalance = docSnap.data().balance || 0;
+      if(showBalance){
+        balanceBtn.innerText = "- " + liveBalance;
+      }
+    }
+  });
+
+  const inboxRef = collection(db,"inbox");
+  const inboxQuery = query(inboxRef, orderBy("createdAt","desc"));
+  onSnapshot(inboxQuery,(snapshot)=>{
+    let unreadCount = 0;
+    inboxList.innerHTML = "";
+    if(snapshot.empty){
+      inboxList.innerHTML = "<p>No messages yet.</p>";
+    }
+    snapshot.forEach(doc=>{
+      const data = doc.data();
+      if(data.uid === user.uid){
+        const p = document.createElement("p");
+        p.innerText = data.message || "";
+        inboxList.appendChild(p);
+        if(!data.read){
+          unreadCount++;
+        }
+      }
+    });
+    if(unreadCount>0){
+      inboxBadge.style.display = "inline";
+      inboxBadge.innerText = unreadCount;
+    } else {
+      inboxBadge.style.display = "none";
+    }
+  });
+
+  const noticeRef = collection(db,"notices");
+  const noticeQuery = query(noticeRef, orderBy("createdAt","desc"));
+  onSnapshot(noticeQuery,(snapshot)=>{
+    noticeList.innerHTML = "";
+    if(snapshot.empty){
+      noticeList.innerHTML = "<p>No notices yet.</p>";
+    }
+    snapshot.forEach(doc=>{
+      const data = doc.data();
+      const p = document.createElement("p");
+      p.innerText = data.message || "";
+      noticeList.appendChild(p);
+    });
+  });
+});
+
+balanceBtn.addEventListener("click",()=>{
+  showBalance = !showBalance;
+  balanceBtn.innerText = showBalance ? "- " + liveBalance : "Tap To Balance";
+});
+
+luckyBtn.addEventListener("click",()=>{ window.location.href = "lucky-bet.html"; });
+
+inboxIcon.addEventListener("click",()=>{ window.location.href = "inbox.html"; });
+
+logoutBtn.addEventListener("click", async ()=>{
+  await signOut(auth);
+  window.location.replace("index.html");
+});
+
+claimBonusBtn.addEventListener("click", async ()=>{
+  if(!currentUser) return;
+
+  const userRef = doc(db,"users",currentUser.uid);
+  const userSnap = await getDoc(userRef);
+  const userData = userSnap.exists() ? userSnap.data() : {};
+
+  const today = new Date().toISOString().split("T")[0];
+  const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
+
+  if(userData.lastLoginDate === today){
+    claimBonusBtn.innerText = "Already Claimed ✔️";
+    return;
+  }
+
+  let streak = (userData.lastLoginDate === yesterday) ? (userData.loginStreak || 0) + 1 : 1;
+  if(streak > 7) streak = 1;
+
+  const bonus = (streak === 7) ? 40 : 20;
+  const newBalance = (userData.balance || 0) + bonus;
+
+  await updateDoc(userRef,{
+    balance: newBalance,
+    loginStreak: streak,
+    lastLoginDate: today
+  });
+
+  claimBonusBtn.innerText = `আজকের রিওয়ার্ড বোনাস ${bonus} ব্যালেন্সে যুক্ত হয়েছে ✔️`;
+  showBalance = true;
+  balanceBtn.innerText = " " + newBalance;
+});
+</script>
+
+</body>
+</html>
