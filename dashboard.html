@@ -279,7 +279,7 @@ onAuthStateChanged(auth, async (user)=>{
     if(docSnap.exists()){
       liveBalance = docSnap.data().balance || 0;
       if(showBalance){
-        balanceBtn.innerText = "B= " + liveBalance;
+        balanceBtn.innerText = "→ " + liveBalance;
       }
     }
   });
@@ -332,7 +332,7 @@ onAuthStateChanged(auth, async (user)=>{
 /* Balance toggle */
 balanceBtn.addEventListener("click",()=>{
   showBalance = !showBalance;
-  balanceBtn.innerText = showBalance ? "৳ " + liveBalance : "Tap To Balance";
+  balanceBtn.innerText = showBalance ? "→ " + liveBalance : "Tap To Balance";
 });
 
 /* Lucky Bet */
