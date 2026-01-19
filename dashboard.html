@@ -161,7 +161,7 @@ body{
 </div>
 
 <div class="notice">
-  <span>ইন্টারন্যাশনাল বিনিয়োগ প্ল্যাটফর্ম</span>
+  <span>বিনিয়োগ প্ল্যাটফর্ম</span>
   <div class="bonus-section" id="claimBonusBtn">Claim Today's Bonus</div>
 </div>
 
@@ -192,7 +192,7 @@ body{
 <div class="notice-board">
   <h3>Notice Board→New Plan</h3>
   <div class="scrollable" id="noticeList">
-    <p>প্লান শুরুর এমাউন্ট মাত্র ৩৯০৳</p>
+    <p>প্লান শুরুর এমাউন্ট মাত্র ৩৯০</p>
   </div>
 </div>
 
@@ -279,7 +279,7 @@ onAuthStateChanged(auth, async (user)=>{
     if(docSnap.exists()){
       liveBalance = docSnap.data().balance || 0;
       if(showBalance){
-        balanceBtn.innerText = "৳ " + liveBalance;
+        balanceBtn.innerText = "B= " + liveBalance;
       }
     }
   });
