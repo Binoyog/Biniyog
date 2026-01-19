@@ -100,25 +100,23 @@ body{
 .menu span{margin-top:6px}
 
 /* Banner */
-.banner{
-  margin:12px;
-  overflow: hidden;
-  border-radius: 10px;
-}
+.banner{margin:12px}
+.banner img{width:100%;border-radius:10px}
 
 /* Slider */
 .slider{
-  display: flex;
-  width: 300%;
-  transition: transform 0.5s ease;
-  overflow-x: auto;
-  scroll-behavior: smooth;
-  scroll-snap-type: x mandatory;
+  width:100%;
+  overflow:hidden;
+  position:relative;
 }
-.slide{
-  width: 100%;
-  flex-shrink: 0;
-  scroll-snap-align: start;
+.slider img{
+  width:100%;
+  display:block;
+  border-radius:10px;
+}
+.slider .slides{
+  display:flex;
+  transition:transform 0.5s ease-in-out;
 }
 
 /* Inbox */
@@ -192,12 +190,20 @@ body{
   <a href="about.html">ℹ️<span>About</span></a>
 </div>
 
-<!-- Banner Slider -->
+<!-- Banner: Slider + 2 Images -->
 <div class="banner">
   <div class="slider" id="slider">
-    <img class="slide" src="https://raw.githubusercontent.com/Binoyog/biniyog/main/assets/Big-offer.png" alt="Banner 1">
-    <img class="slide" src="https://raw.githubusercontent.com/Binoyog/biniyog/main/assets/Big-offer.png" alt="Banner 2">
-    <img class="slide" src="https://raw.githubusercontent.com/Binoyog/biniyog/main/assets/Big-offer.png" alt="Banner 3">
+    <div class="slides" id="slides">
+      <img src="https://raw.githubusercontent.com/Binoyog/biniyog/main/assets/pic1.png" alt="Banner 1">
+      <img src="https://raw.githubusercontent.com/Binoyog/biniyog/main/assets/pic2.jpeg" alt="Banner 2">
+      <img src="https://raw.githubusercontent.com/Binoyog/biniyog/main/assets/pic3.png" alt="Banner 3">
+    </div>
+  </div>
+
+  <!-- নিচে 2টা স্ট্যাটিক ছবি -->
+  <div style="margin-top:12px;">
+    <img src="https://raw.githubusercontent.com/Binoyog/biniyog/main/assets/Big-offer.png" alt="Big Offer 1">
+    <img src="https://raw.githubusercontent.com/Binoyog/biniyog/main/assets/Big-offer2.png" style="margin-top:12px;" alt="Big Offer 2">
   </div>
 </div>
 
@@ -245,7 +251,6 @@ const inboxSection = document.getElementById("inboxSection");
 const inboxIcon = document.getElementById("inboxIcon");
 const inboxBadge = document.getElementById("inboxBadge");
 const logoutBtn = document.getElementById("logoutBtn");
-const slider = document.getElementById("slider");
 
 let showBalance = false;
 let liveBalance = 0;
@@ -370,21 +375,48 @@ claimBonusBtn.addEventListener("click", async ()=>{
   balanceBtn.innerText = "৳ " + newBalance;
 });
 
-/* ===== Slider Auto + Swipe + Scroll ===== */
-let index = 0;
-function autoSlide() {
-  index++;
-  if (index >= slider.children.length) index = 0;
-  slider.scrollTo({
-    left: slider.children[index].offsetLeft,
-    behavior: "smooth"
-  });
-}
-let auto = setInterval(autoSlide, 2000);
 
-slider.addEventListener("scroll", () => {
-  clearInterval(auto);
-  auto = setInterval(autoSlide, 2000);
+/* ===============================
+   Slider Auto + Swipe + Scroll
+=================================*/
+const slides = document.getElementById("slides");
+let index = 0;
+const total = slides.children.length;
+
+function showSlide(i){
+  slides.style.transform = `translateX(-${i * 100}%)`;
+}
+
+function nextSlide(){
+  index = (index + 1) % total;
+  showSlide(index);
+}
+
+// auto slide every 2 seconds
+let sliderInterval = setInterval(nextSlide, 2000);
+
+/* swipe */
+let startX = 0;
+let endX = 0;
+
+const slider = document.getElementById("slider");
+slider.addEventListener("touchstart", (e)=>{
+  startX = e.touches[0].clientX;
+  clearInterval(sliderInterval);
+});
+slider.addEventListener("touchend", (e)=>{
+  endX = e.changedTouches[0].clientX;
+  const diff = endX - startX;
+
+  if(diff > 50){
+    index = (index - 1 + total) % total;
+    showSlide(index);
+  } else if(diff < -50){
+    index = (index + 1) % total;
+    showSlide(index);
+  }
+
+  sliderInterval = setInterval(nextSlide, 2000);
 });
 </script>
 
