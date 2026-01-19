@@ -101,7 +101,7 @@ body{
 
 /* Banner */
 .banner{margin:12px}
-.banner img{width:100%;border-radius:10px}
+.banner img{width:100%;border-radius:10px;display:block;}
 
 /* Inbox */
 .inbox{
@@ -174,10 +174,9 @@ body{
   <a href="about.html">ℹ️<span>About</span></a>
 </div>
 
-<!-- Banner: GitHub Image -->
+<!-- Banner: GitHub Image Slider -->
 <div class="banner">
-  <img src="https://raw.githubusercontent.com/Binoyog/biniyog/main/assets/Big-offer.png" alt="Banner 1">
-  <img src="https://raw.githubusercontent.com/Binoyog/biniyog/main/assets/pic2.jpeg" alt="Banner 2">
+  <img id="slideImg" src="https://raw.githubusercontent.com/Binoyog/biniyog/main/assets/Big-offer.png" alt="Banner Slider">
 </div>
 
 <!-- Inbox Section -->
@@ -347,6 +346,22 @@ claimBonusBtn.addEventListener("click", async ()=>{
   showBalance = true;
   balanceBtn.innerText = "৳ " + newBalance;
 });
+
+/* Slider Image */
+const sliderImages = [
+  "https://raw.githubusercontent.com/Binoyog/biniyog/main/assets/Big-offer.png",
+  "https://raw.githubusercontent.com/Binoyog/biniyog/main/assets/Big-offer.png",
+  "https://raw.githubusercontent.com/Binoyog/biniyog/main/assets/Big-offer.png"
+];
+
+let slideIndex = 0;
+const slideImg = document.getElementById("slideImg");
+
+setInterval(() => {
+  slideIndex = (slideIndex + 1) % sliderImages.length;
+  slideImg.src = sliderImages[slideIndex];
+}, 2000);
+
 </script>
 
 </body>
