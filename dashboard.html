@@ -224,20 +224,10 @@ const inboxSection = document.getElementById("inboxSection");
 const inboxIcon = document.getElementById("inboxIcon");
 const inboxBadge = document.getElementById("inboxBadge");
 const logoutBtn = document.getElementById("logoutBtn");
-const bannerImg = document.getElementById("bannerImg");
 
 let showBalance = false;
 let liveBalance = 0;
 let currentUser = null;
-
-/* ===============================
-   GitHub Banner Image Setup
-   =============================== */
-const githubUser = "YOUR_GITHUB_USERNAME";
-const githubRepo = "YOUR_REPO_NAME";
-const githubBranch = "main";  // যদি তোমার branch main না হয় তাহলে বদলে দিবে
-
-bannerImg.src = `https://raw.githubusercontent.com/${githubUser}/${githubRepo}/${githubBranch}/assets/Big-offer.png`;
 
 /* ===============================
    AUTH + LOAD BALANCE
