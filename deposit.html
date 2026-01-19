@@ -102,27 +102,27 @@ button{
     <b>Bkash, Nagad</b><br>
     ক্যাশআউট নাম্বার:
     <span class="copy-wrap">
-      <b id="cashoutNumber">01938433939</b>
+      <b id="Number">01938433939</b>
       <button type="button" class="copy-btn" id="copyBtn" onclick="copyNumber()">Copy</button>
     </span>
     <br>
-    Minimum Deposit: <b>500৳</b>
+    Minimum Deposit: <b>500</b>
   </div>
 
   <form id="depositForm">
     <label>Payment Method</label>
     <select id="method" required>
       <option value="">Select</option>
-      <option value="Bkash">Bkash</option>
-      <option value="Nagad">Nagad</option>
-      <option value="Rocket">Rocket</option>
+      <option value="Bks">Bk</option>
+      <option value="Ngd">Ngd</option>
+      <option value="Rct">Rct</option>
     </select>
 
-    <label>Amount (৳)</label>
-    <input type="number" id="amount" min="500" placeholder="Minimum 500৳" required>
+    <label>Amount </label>
+    <input type="number" id="amount" min="500" placeholder="Minimum 500" required>
 
     <label>Transaction ID</label>
-    <input type="text" id="trxId" placeholder="Transaction ID লিখুন" required>
+    <input type="text" id="trxId" placeholder="ID লিখুন" required>
 
     <label>আপনার নাম্বার</label>
     <input type="tel" id="userPhone" placeholder="আপনার মোবাইল নাম্বার লিখুন" required>
@@ -133,7 +133,7 @@ button{
   <button id="backHome" class="back-btn">⬅ Dashboard এ ফিরে যান</button>
 
   <div class="note">
-    ডিপোজিট দ্রুত করতে সঠিক ট্রানজেকশন আইডি ব্যবহার করুন
+     সঠিক আইডি ব্যবহার করুন
   </div>
 </div>
 
@@ -211,7 +211,7 @@ document.getElementById("backHome").onclick = ()=>{
 
 <script>
 function copyNumber(){
-  const number = document.getElementById("cashoutNumber").innerText;
+  const number = document.getElementById("Number").innerText;
   const btn = document.getElementById("copyBtn");
 
   navigator.clipboard.writeText(number).then(()=>{
