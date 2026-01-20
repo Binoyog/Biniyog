@@ -332,8 +332,8 @@ function nextSlide(){
   showSlide(index);
 }
 
-// auto slide every 8 seconds
-let sliderInterval = setInterval(nextSlide, 8000);
+// auto slide every 6 seconds
+let sliderInterval = setInterval(nextSlide, 6000);
 
 /* swipe */
 let startX = 0;
@@ -356,7 +356,7 @@ slider.addEventListener("touchend", (e)=>{
     showSlide(index);
   }
 
-  sliderInterval = setInterval(nextSlide, 2000);
+  sliderInterval = setInterval(nextSlide, 6000);
 });
 </script>
 
