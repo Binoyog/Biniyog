@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Inbox</title>
+
+<style>
+  body{font-family: Arial, sans-serif; margin:0; padding:0; background:#f7f7f7;}
+  .topbar{background:#d81b60; color:#fff; padding:12px; text-align:center;}
+  .container{padding:12px;}
+  .chatlist{background:#fff; padding:10px; border-radius:10px; box-shadow:0 3px 8px rgba(0,0,0,0.1);}
+  .chatitem{padding:10px; border-bottom:1px solid #eee; cursor:pointer;}
+  .chatitem:last-child{border-bottom:none;}
+  .chatitem .name{font-weight:bold;}
+  .chatitem .lastmsg{font-size:13px; color:#555;}
+  .badge{background:red; color:#fff; padding:2px 6px; border-radius:50%; font-size:12px; float:right;}
+
+  .chatbox{background:#fff; margin-top:12px; padding:12px; border-radius:10px; box-shadow:0 3px 8px rgba(0,0,0,0.1);}
+  .messages{max-height:300px; overflow-y:auto; margin-bottom:10px;}
+  .msg{padding:8px; margin:6px 0; border-radius:8px; max-width:80%;}
+  .msg.user{background:#e0f7fa; margin-left:auto;}
+  .msg.admin{background:#ffe0b2; margin-right:auto;}
+  .sendbox{display:flex; gap:8px;}
+  .sendbox input{flex:1; padding:8px; border:1px solid #ddd; border-radius:8px;}
+  .sendbox button{padding:8px 12px; border:none; background:#d81b60; color:#fff; border-radius:8px; cursor:pointer;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h2>Admin Inbox</h2>
+</div>
+
+<div class="container">
+  <div class="chatlist" id="chatList">
+    <p>Loading chats...</p>
+  </div>
+
+  <div class="chatbox" id="chatBox" style="display:none;">
+    <h3 id="chatUserName"></h3>
+    <div class="messages" id="messages"></div>
+
+    <div class="sendbox">
+      <input type="text" id="msgText" placeholder="Type message...">
+      <input type="file" id="fileInput">
+      <button id="sendBtn">Send</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getFirestore, collection, query, orderBy, onSnapshot, doc, setDoc, addDoc, updateDoc, serverTimestamp, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_AUTH_DOMAIN",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_STORAGE_BUCKET"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const storage = getStorage(app);
+
+let selectedChatId = null;
+let selectedUserUid = null;
+
+// check admin
+onAuthStateChanged(auth, async (user)=>{
+  if(!user) return window.location.replace("index.html");
+
+  const userDoc = await getDoc(doc(db,"users",user.uid));
+  if(!userDoc.exists() || userDoc.data().role !== "admin"){
+    alert("Access Denied!");
+    return window.location.replace("index.html");
+  }
+
+  loadChats();
+});
+
+function loadChats(){
+  const q = query(collection(db,"chats"), orderBy("updatedAt","desc"));
+  onSnapshot(q,(snap)=>{
+    const chatList = document.getElementById("chatList");
+    chatList.innerHTML = "";
+    if(snap.empty){
+      chatList.innerHTML = "<p>No chats yet.</p>";
+    }
+    snap.forEach(doc=>{
+      const data = doc.data();
+      const item = document.createElement("div");
+      item.className = "chatitem";
+      item.innerHTML = `
+        <span class="name">${data.name}</span>
+        <span class="badge">${data.unreadByAdmin ? 1 : 0}</span>
+        <p class="lastmsg">${data.lastMessage}</p>
+      `;
+      item.addEventListener("click", ()=>{
+        openChat(doc.id, data.uid, data.name);
+      });
+      chatList.appendChild(item);
+    });
+  });
+}
+
+async function openChat(chatId, uid, name){
+  selectedChatId = chatId;
+  selectedUserUid = uid;
+  document.getElementById("chatBox").style.display = "block";
+  document.getElementById("chatUserName").innerText = name;
+
+  // mark admin read
+  await updateDoc(doc(db,"chats",chatId), { unreadByAdmin:false });
+
+  // load messages
+  const q = query(collection(db,"messages"), where("uid","==",uid), orderBy("createdAt","asc"));
+  onSnapshot(q,(snap)=>{
+    const messages = document.getElementById("messages");
+    messages.innerHTML = "";
+    snap.forEach(doc=>{
+      const d = doc.data();
+      const div = document.createElement("div");
+      div.className = "msg " + (d.from === "admin" ? "admin" : "user");
+      div.innerText = d.text;
+      messages.appendChild(div);
+    });
+  });
+}
+
+document.getElementById("sendBtn").addEventListener("click", async ()=>{
+  const text = document.getElementById("msgText").value;
+  const file = document.getElementById("fileInput").files[0];
+
+  if(!selectedChatId) return alert("Select a chat");
+
+  let fileUrl = "";
+  let fileType = "";
+
+  if(file){
+    const storageRef = ref(storage, `chat_files/${selectedUserUid}/${Date.now()}_${file.name}`);
+    await uploadBytes(storageRef, file);
+    fileUrl = await getDownloadURL(storageRef);
+    fileType = file.type;
+  }
+
+  const msgData = {
+    uid: selectedUserUid,
+    from: "admin",
+    text: text || "",
+    fileUrl,
+    fileType,
+    seen: false,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp()
+  };
+
+  await addDoc(collection(db,"messages"), msgData);
+
+  await updateDoc(doc(db,"chats",selectedChatId), {
+    lastFrom: "admin",
+    lastMessage: text || "📎 File sent",
+    unreadByUser: true,
+    unreadByAdmin: false,
+    updatedAt: serverTimestamp()
+  });
+
+  document.getElementById("msgText").value = "";
+  document.getElementById("fileInput").value = "";
+});
+</script>
+
+</body>
+</html>
