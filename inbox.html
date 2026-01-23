@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>User Inbox</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f2f2f2;
+    }
+    #container {
+      max-width: 500px;
+      margin: 20px auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+    }
+    #messages {
+      height: 400px;
+      overflow-y: auto;
+      border: 1px solid #ddd;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+    .msg {
+      padding: 8px;
+      margin: 5px 0;
+      border-radius: 5px;
+    }
+    .from-user {
+      background: #d1f5d3;
+      text-align: right;
+    }
+    .from-admin {
+      background: #f5d1d1;
+      text-align: left;
+    }
+    #inputBox {
+      display: flex;
+      gap: 10px;
+    }
+    input, button {
+      padding: 10px;
+      font-size: 16px;
+    }
+    input {
+      flex: 1;
+    }
+  </style>
+</head>
+<body>
+
+<div id="container">
+  <h2>User Inbox</h2>
+  <div id="messages"></div>
+
+  <div id="inputBox">
+    <input type="text" id="text" placeholder="Type message..." />
+    <button id="sendBtn">Send</button>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
+  import {
+    getFirestore,
+    collection,
+    query,
+    where,
+    orderBy,
+    onSnapshot,
+    setDoc,
+    doc,
+    addDoc,
+    serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBFsTzlRPoWHVXEHbKrPdwxslxZGa7Kqfw",
+    authDomain: "biniyog-95d00.firebaseapp.com",
+    projectId: "biniyog-95d00",
+    storageBucket: "biniyog-95d00.firebasestorage.app",
+    messagingSenderId: "523238228802",
+    appId: "1:523238228802:web:a65183bdc4c268f94efedb"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  const messagesDiv = document.getElementById("messages");
+  const sendBtn = document.getElementById("sendBtn");
+  const textInput = document.getElementById("text");
+
+  let currentUser;
+
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      currentUser = user;
+      loadMessages();
+    } else {
+      alert("Login required");
+    }
+  });
+
+  async function loadMessages() {
+    await setDoc(doc(db, "chats", currentUser.uid), {
+      uid: currentUser.uid,
+      name: currentUser.displayName || "User",
+      lastFrom: "user",
+      lastMessage: "",
+      unreadByAdmin: true,
+      unreadByUser: false,
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+
+    const q = query(
+      collection(db, "messages"),
+      where("uid", "==", currentUser.uid),
+      orderBy("createdAt", "asc")
+    );
+
+    onSnapshot(q, (snap) => {
+      messagesDiv.innerHTML = "";
+      snap.forEach(docSnap => {
+        const m = docSnap.data();
+        const div = document.createElement("div");
+        div.className = "msg " + (m.from === "admin" ? "from-admin" : "from-user");
+        div.innerText = m.text;
+        messagesDiv.appendChild(div);
+      });
+    });
+  }
+
+  sendBtn.addEventListener("click", async () => {
+    const text = textInput.value.trim();
+    if (!text) return;
+
+    await addDoc(collection(db, "messages"), {
+      uid: currentUser.uid,
+      from: "user",
+      text: text,
+      fileUrl: "",
+      fileType: "",
+      seen: false,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+
+    await setDoc(doc(db, "chats", currentUser.uid), {
+      uid: currentUser.uid,
+      name: currentUser.displayName || "User",
+      lastFrom: "user",
+      lastMessage: text,
+      unreadByAdmin: true,
+      unreadByUser: false,
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+
+    textInput.value = "";
+  });
+</script>
+
+</body>
+</html>
