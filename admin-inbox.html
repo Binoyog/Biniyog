@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<title>Admin Inbox | Biniyog</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  body{
+    margin:0;
+    font-family: Arial, sans-serif;
+    background:#0f0f12;
+    color:#e6e6e6;
+    font-size:12px;
+  }
+  .header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:10px 15px;
+    background:linear-gradient(90deg, #1c1c2b, #0b0b10);
+    border-bottom:1px solid #2b2b3a;
+  }
+  .header h1{
+    margin:0;
+    font-size:16px;
+    color:#d9d9d9;
+  }
+  .header button{
+    padding:6px 10px;
+    border:none;
+    border-radius:4px;
+    cursor:pointer;
+    background:#c0c0c0;
+    color:#000;
+    font-weight:bold;
+  }
+  .container{
+    display:flex;
+    gap:12px;
+    padding:12px;
+  }
+  .left, .right{
+    background:linear-gradient(180deg, #1a1a2a, #0f0f15);
+    border:1px solid #2a2a38;
+    border-radius:8px;
+    padding:10px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.5);
+  }
+  .left{ flex:1; max-width:350px; }
+  .right{ flex:2; }
+
+  .card-title{
+    font-size:14px;
+    font-weight:bold;
+    margin-bottom:8px;
+    color:#cfcfcf;
+    border-bottom:1px solid #2a2a38;
+    padding-bottom:6px;
+  }
+
+  .user-list{
+    max-height:70vh;
+    overflow:auto;
+  }
+  .user-item{
+    padding:8px;
+    margin-bottom:8px;
+    border:1px solid #2a2a38;
+    border-radius:6px;
+    cursor:pointer;
+    background:#151526;
+  }
+  .user-item:hover{
+    background:#1f1f35;
+  }
+  .user-item .name{
+    font-weight:bold;
+    color:#f0f0f0;
+  }
+  .user-item .sub{
+    font-size:12px;
+    color:#b5b5b5;
+  }
+
+  .chat-box{
+    max-height:70vh;
+    overflow:auto;
+    padding:8px;
+    border:1px solid #2a2a38;
+    border-radius:8px;
+    background:#121224;
+  }
+
+  .msg{
+    margin:8px 0;
+    padding:8px;
+    border-radius:8px;
+    max-width:75%;
+  }
+  .msg.user{
+    background:linear-gradient(90deg, #1b4b8b, #0f2a4d);
+    margin-left:auto;
+    text-align:right;
+  }
+  .msg.admin{
+    background:linear-gradient(90deg, #2f2f2f, #4b4b4b);
+    text-align:left;
+  }
+
+  .msg small{
+    display:block;
+    font-size:11px;
+    color:#d0d0d0;
+  }
+
+  .send-box{
+    margin-top:10px;
+    display:flex;
+    gap:8px;
+  }
+  .send-box input{
+    flex:1;
+    padding:8px;
+    border-radius:6px;
+    border:1px solid #2a2a38;
+    background:#0f0f15;
+    color:#e6e6e6;
+  }
+  .send-box button{
+    padding:8px 12px;
+    border:none;
+    border-radius:6px;
+    cursor:pointer;
+    background:#c0c0c0;
+    color:#000;
+    font-weight:bold;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Admin Inbox (Platinum)</h1>
+  <button onclick="logout()">Logout</button>
+</div>
+
+<div class="container">
+  <div class="left">
+    <div class="card-title">Users (Latest SMS on top)</div>
+    <div class="user-list" id="userList">
+      Loading...
+    </div>
+  </div>
+
+  <div class="right">
+    <div class="card-title" id="chatTitle">Select a user to view chat</div>
+    <div class="chat-box" id="chatBox"></div>
+
+    <div class="send-box">
+      <input type="text" id="msgInput" placeholder="Type your message..." />
+      <button onclick="sendAdminMessage()">Send</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
+import {
+  getFirestore, doc, getDoc, collection, query, where,
+  getDocs, orderBy, limit, addDoc, updateDoc, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBFsTzlRPoWHVXEHbKrPdwxslxZGa7Kqfw",
+  authDomain: "biniyog-95d00.firebaseapp.com",
+  projectId: "biniyog-95d00",
+  storageBucket: "biniyog-95d00.firebasestorage.app",
+  messagingSenderId: "523238228802",
+  appId: "1:523238228802:web:a65183bdc4c268f94efedb"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+let selectedUid = null;
+
+/* AUTH CHECK */
+onAuthStateChanged(auth, async(user)=>{
+  if(!user){
+    location.href="admin-login.html";
+    return;
+  }
+  const uSnap = await getDoc(doc(db,"users",user.uid));
+  if(!uSnap.exists() || uSnap.data().role!=="admin"){
+    alert("Access denied");
+    await signOut(auth);
+    location.href="admin-login.html";
+    return;
+  }
+  loadUsers();
+});
+
+/* LOAD USERS LIST (LATEST SMS FIRST) */
+async function loadUsers(){
+  const list = document.getElementById("userList");
+  list.innerHTML="";
+
+  const q = query(collection(db,"chats"), orderBy("updatedAt","desc"));
+  const snap = await getDocs(q);
+
+  if(snap.empty){
+    list.innerHTML = "No chats yet";
+    return;
+  }
+
+  for(const d of snap.docs){
+    const c = d.data();
+    const uSnap = await getDoc(doc(db,"users",c.uid));
+    const phone = uSnap.exists() ? uSnap.data().phone : "N/A";
+
+    list.innerHTML += `
+      <div class="user-item" onclick="openChat('${c.uid}','${phone}')">
+        <div class="name">${phone}</div>
+        <div class="sub">Last: ${c.lastMessage || ""} • From: ${c.lastFrom}</div>
+      </div>
+    `;
+  }
+}
+
+/* OPEN CHAT */
+window.openChat = async (uid, phone) => {
+  selectedUid = uid;
+  document.getElementById("chatTitle").innerText = `Chat with ${phone}`;
+  loadMessages(uid);
+}
+
+/* LOAD MESSAGES */
+async function loadMessages(uid){
+  const box = document.getElementById("chatBox");
+  box.innerHTML="";
+
+  const q = query(collection(db,"messages"),
+    where("uid","==",uid),
+    orderBy("createdAt","asc")
+  );
+  const snap = await getDocs(q);
+
+  if(snap.empty){
+    box.innerHTML = "No messages yet";
+    return;
+  }
+
+  for(const d of snap.docs){
+    const m = d.data();
+    const cls = m.from === "admin" ? "admin" : "user";
+    box.innerHTML += `
+      <div class="msg ${cls}">
+        ${m.text || ""}
+        <small>${m.from} • ${new Date(m.createdAt.toMillis()).toLocaleString()}</small>
+      </div>
+    `;
+  }
+}
+
+/* SEND MESSAGE AS ADMIN */
+window.sendAdminMessage = async () => {
+  const input = document.getElementById("msgInput");
+  const text = input.value.trim();
+  if(!text || !selectedUid) return;
+
+  // add to messages
+  await addDoc(collection(db,"messages"),{
+    uid: selectedUid,
+    from: "admin",
+    text: text,
+    fileUrl: "",
+    fileType: "",
+    seen: false,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp()
+  });
+
+  // update chats
+  const chatQuery = query(collection(db,"chats"), where("uid","==",selectedUid), limit(1));
+  const snap = await getDocs(chatQuery);
+  if(!snap.empty){
+    const chatDoc = snap.docs[0];
+    await updateDoc(chatDoc.ref, {
+      lastFrom: "admin",
+      lastMessage: text,
+      unreadByUser: true,
+      unreadByAdmin: false,
+      updatedAt: serverTimestamp()
+    });
+  }
+
+  input.value = "";
+  loadMessages(selectedUid);
+  loadUsers();
+}
+
+/* LOGOUT */
+window.logout = async () => {
+  await signOut(auth);
+  location.href="admin-login.html";
+}
+</script>
+</body>
+</html>
